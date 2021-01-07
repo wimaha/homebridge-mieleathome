@@ -1,0 +1,29 @@
+{
+  "pluginAlias": "MieleAtHome",
+  "pluginType": "platform",
+  "singular": true,
+  "schema": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "title": "Name",
+        "type": "string",
+        "required": true,
+        "default": "Miele@Home"
+      },
+      "token": {
+        "title": "Token",
+        "type": "string",
+        "required": true,
+        "default": ""
+      },
+      "pollInterval": {
+        "title": "Poll interval [s]",
+        "type": "number",
+        "required": false,
+        "default": 60
+      }
+
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "private": false,
+  "displayName": "Miele@Home",
+  "name": "homebridge-mieleathome",
+  "version": "1.0.0",
+  "description": "A start for supporting all Miele@Home devices",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/QuickSander/homebridge-mieleathome.git"
+  },
+  "bugs": {
+    "url": "https://github.com/QuickSander/homebridge-mieleathome/issues"
+  },
+  "engines": {
+    "node": ">=10.17.0",
+    "homebridge": ">=1.0.0"
+  },
+  "main": "dist/index.js",
+  "scripts": {
+    "lint": "eslint src/**.ts",
+    "watch": "npm run build && npm link && nodemon",
+    "build": "rimraf ./dist && tsc",
+    "prepublishOnly": "npm run lint && npm run build"
+  },
+  "keywords": [
+    "homebridge-plugin"
+  ],
+  "dependencies": {
+    "axios": "^0.20.0",
+    "request": "^2.88.2"
+  },
+  "devDependencies": {
+    "@types/node": "^14.10.3",
+    "@typescript-eslint/eslint-plugin": "^4.1.1",
+    "@typescript-eslint/parser": "^4.1.1",
+    "eslint": "^7.9.0",
+    "homebridge": "^1.2.2",
+    "nodemon": "^2.0.4",
+    "rimraf": "^3.0.2",
+    "ts-node": "^9.0.0",
+    "typescript": "^4.0.2"
+  }
+}
