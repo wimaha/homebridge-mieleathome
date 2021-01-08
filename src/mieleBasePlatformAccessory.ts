@@ -2,6 +2,12 @@ import { PlatformAccessory } from 'homebridge';
 
 import { MieleAtHomePlatform } from './platform';
 
+export interface MieleStatusResponse {
+  status: {value_raw: number};
+  programPhase: {value_raw: number};
+  remainingTime: number[];
+}
+
 // -----------------------------------------------------------------------------------------------------------------------------------------
 // Miele Base Accessory
 // -----------------------------------------------------------------------------------------------------------------------------------------

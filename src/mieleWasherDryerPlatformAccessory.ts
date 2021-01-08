@@ -6,13 +6,15 @@
 import { Service, PlatformAccessory, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback } from 'homebridge';
 
 import { MieleAtHomePlatform } from './platform';
-import { MieleBasePlatformAccessory } from './mieleBasePlatformAccessory';
+import { MieleBasePlatformAccessory, MieleStatusResponse } from './mieleBasePlatformAccessory';
 
 import request from 'request';
 
 // Washer dryer
 export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessory {
   private valveService: Service;
+
+
 
   private states = {
     active: this.platform.Characteristic.Active.INACTIVE,
@@ -60,8 +62,8 @@ export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessor
     });
   }
 
-  private getGeneric(callback: CharacteristicGetCallback, func: (response: Record<string, unknown>) => number) {
-    request(this.requestStateConfig, (err: Error | null, res, body: string) => {
+  private getGeneric(callback: CharacteristicGetCallback, func: (response: MieleStatusResponse) => number) {
+    request(this.requestStateConfig, (err: Error | null, _res, body: string) => {
       if (err) {
         callback(err);
       } else {
@@ -97,7 +99,7 @@ export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessor
     this.getGeneric(callback, this.getRemainingDurationFromResponse);
   }
 
-  private getActiveFromResponse(response: Record<string, unknown>): number {
+  private getActiveFromResponse(response: MieleStatusResponse): number {
     this.states.active = this.platform.Characteristic.Active.ACTIVE;
 
     // Active
@@ -113,7 +115,7 @@ export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessor
     return this.states.active;
   }
 
-  private getInUseFromResponse(response: Record<string, unknown>) : number {
+  private getInUseFromResponse(response: MieleStatusResponse) : number {
 
     let inUse = this.platform.Characteristic.InUse.NOT_IN_USE;
 
@@ -137,7 +139,7 @@ export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessor
     return inUse;
   }
 
-  private getRemainingDurationFromResponse(response: Record<string, unknown>) : number {
+  private getRemainingDurationFromResponse(response: MieleStatusResponse) : number {
 
     const remainingDuration = response.remainingTime[0]*60*60 + response.remainingTime[1]*60;
     
