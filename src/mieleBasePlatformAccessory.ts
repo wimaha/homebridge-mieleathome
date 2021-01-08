@@ -1,14 +1,12 @@
-import { PlatformAccessory, CharacteristicGetCallback } from 'homebridge';
+import { PlatformAccessory } from 'homebridge';
 
 import { MieleAtHomePlatform } from './platform';
-
-import request from 'request';
 
 // -----------------------------------------------------------------------------------------------------------------------------------------
 // Miele Base Accessory
 // -----------------------------------------------------------------------------------------------------------------------------------------
 export abstract class MieleBasePlatformAccessory {
-  protected requestStateConfig: {method: string, url:string, headers:{}};
+  protected requestStateConfig: {method: string; url: string; headers: Record<string, unknown>};
 
   constructor(
     protected readonly platform: MieleAtHomePlatform,

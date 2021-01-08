@@ -5,7 +5,6 @@ import { MieleHoodPlatformAccessory } from './mieleHoodPlatformAccessory';
 import { MieleWasherDryerPlatformAccessory } from './mieleWasherDryerPlatformAccessory';
 
 import request from 'request';
-import { MieleBasePlatformAccessory } from './mieleBasePlatformAccessory';
 
 //-------------------------------------------------------------------------------------------------
 // Main class
@@ -38,7 +37,7 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
     this.api.on('didFinishLaunching', () => {
       log.debug('Executed didFinishLaunching callback');
       
-      if (!this.token || this.token=='') {
+      if (!this.token || this.token==='') {
         this.log.info('No token known.');
       } else {
         this.discoverDevices();
@@ -87,7 +86,8 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
           modelNumber: device.ident.deviceIdentLabel.techType,
         };
 
-        this.log.info(`Discovered device: id: ${deviceObject.uniqueId}, name: ${deviceObject.displayName}, model: ${deviceObject.modelNumber}`);
+        this.log.info(`Discovered device: id: ${deviceObject.uniqueId}, `+
+                      `name: ${deviceObject.displayName}, model: ${deviceObject.modelNumber}`);
 
         // Determine device type
         let platformAccessoryType;

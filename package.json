@@ -3,7 +3,7 @@
   "displayName": "Miele@Home",
   "name": "homebridge-mieleathome",
   "version": "1.0.0",
-  "description": "A start for supporting all Miele@Home devices",
+  "description": "A start for supporting Miele@Home devices",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",

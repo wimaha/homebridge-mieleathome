@@ -16,7 +16,7 @@ export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessor
 
   private states = {
     active: this.platform.Characteristic.Active.INACTIVE,
-  }
+  };
 
   constructor(
     platform: MieleAtHomePlatform,
@@ -51,27 +51,24 @@ export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessor
   protected update(): void {
     this.platform.log.debug(`Updating. Request: ${this.requestStateConfig.url}`);
 
-    request(this.requestStateConfig, (err, res, body) => {
+    request(this.requestStateConfig, (err: Error | null, res, body: string) => {
       if (err) {
-        this.platform.log.error(err);
-      }
-      else {
-        this.valveService.setCharacteristic(this.platform.Characteristic.Active, this.getActiveFromResponse(JSON.parse(body))); 
+        this.platform.log.error(err.message);
+      } else {
+        this.valveService.updateCharacteristic(this.platform.Characteristic.Active, this.getActiveFromResponse(JSON.parse(body))); 
       }
     });
   }
 
-private getGeneric(callback: CharacteristicGetCallback, func: (response: any) => number) {
-  request(this.requestStateConfig, (err, res, body) => {
-    if (err) {
-      callback(err);
-    }
-    else
-    {
-      callback(null, func(JSON.parse(body)));
-    }
-  });
-}
+  private getGeneric(callback: CharacteristicGetCallback, func: (response: Record<string, unknown>) => number) {
+    request(this.requestStateConfig, (err: Error | null, res, body: string) => {
+      if (err) {
+        callback(err);
+      } else {
+        callback(null, func(JSON.parse(body)));
+      }
+    });
+  }
 
   // Set active not supported for a Miele Washer Dryer.
   setActive(value: CharacteristicValue, callback: CharacteristicSetCallback) {
@@ -82,7 +79,7 @@ private getGeneric(callback: CharacteristicGetCallback, func: (response: any) =>
     // Undo state change to emulate a readonly state (since HomeKit valves are read/write)
     if(value !== this.states.active) {
       setTimeout(()=> {
-        this.valveService.setCharacteristic(this.platform.Characteristic.Active, this.states.active); 
+        this.valveService.updateCharacteristic(this.platform.Characteristic.Active, this.states.active); 
       }, 500);
     }
     
@@ -100,7 +97,7 @@ private getGeneric(callback: CharacteristicGetCallback, func: (response: any) =>
     this.getGeneric(callback, this.getRemainingDurationFromResponse);
   }
 
-  private getActiveFromResponse(response: any): number {
+  private getActiveFromResponse(response: Record<string, unknown>): number {
     this.states.active = this.platform.Characteristic.Active.ACTIVE;
 
     // Active
@@ -116,7 +113,7 @@ private getGeneric(callback: CharacteristicGetCallback, func: (response: any) =>
     return this.states.active;
   }
 
-  private getInUseFromResponse(response: any) : number {
+  private getInUseFromResponse(response: Record<string, unknown>) : number {
 
     let inUse = this.platform.Characteristic.InUse.NOT_IN_USE;
 
@@ -140,9 +137,9 @@ private getGeneric(callback: CharacteristicGetCallback, func: (response: any) =>
     return inUse;
   }
 
-  private getRemainingDurationFromResponse(response: any) : number {
+  private getRemainingDurationFromResponse(response: Record<string, unknown>) : number {
 
-    let remainingDuration = response.remainingTime[0]*60*60 + response.remainingTime[1]*60;
+    const remainingDuration = response.remainingTime[0]*60*60 + response.remainingTime[1]*60;
     
     this.platform.log.debug('Get Characteristic RemainingDuration:', remainingDuration, '[s]');
     return remainingDuration;

@@ -22,7 +22,7 @@ export class MieleHoodPlatformAccessory {
     LightOn: false,
     FanOn: false,
     FanSpeed: 0,
-  }
+  };
 
   constructor(
     private readonly platform: MieleAtHomePlatform,
@@ -100,7 +100,7 @@ export class MieleHoodPlatformAccessory {
       body: httpdata,
     };
 
-    request(config, (err, res, body) => {
+    request(config, (err, _res, _body) => {
       if (err) {
         callback(err);
       }
@@ -131,7 +131,7 @@ export class MieleHoodPlatformAccessory {
       body: httpdata,
     };
 
-    request(config, (err, res, body) => {
+    request(config, (err, _res, _body) => {
       if (err) {
         callback(err);
       }
@@ -168,7 +168,7 @@ export class MieleHoodPlatformAccessory {
       body: httpdata,
     };
 
-    request(config, (err, res, body) => {
+    request(config, (err, _res, _body) => {
       if (err) {
         callback(err);
       }
@@ -206,7 +206,7 @@ export class MieleHoodPlatformAccessory {
       },
     };
 
-    request(config, (err, res, body) => {
+    request(config, (err, _res, body) => {
       if (err) {
         callback(err);
       }
