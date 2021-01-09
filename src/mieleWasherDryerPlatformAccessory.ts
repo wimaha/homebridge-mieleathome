@@ -56,18 +56,21 @@ export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessor
     request(this.requestStateConfig, (err: Error | null, res, body: string) => {
       if (err) {
         this.platform.log.error(err.message);
-      } else {
+      } else if (res.statusCode === 200){
         this.valveService.updateCharacteristic(this.platform.Characteristic.Active, this.getActiveFromResponse(JSON.parse(body))); 
       }
     });
   }
 
   private getGeneric(callback: CharacteristicGetCallback, func: (response: MieleStatusResponse) => number) {
-    request(this.requestStateConfig, (err: Error | null, _res, body: string) => {
+    request(this.requestStateConfig, (err: Error | null, res, body: string) => {
       if (err) {
         callback(err);
-      } else {
+      } else if (res.statusCode === 200) {
         callback(null, func(JSON.parse(body)));
+      } else {
+        this.platform.log.error(`Miele API responded with error code: ${res.statusCode}. Failed to retieve status from `+
+                                `'${this.requestStateConfig.url}'.`);
       }
     });
   }
@@ -88,15 +91,15 @@ export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessor
   }
 
   getActive(callback: CharacteristicGetCallback) {
-    this.getGeneric(callback, this.getActiveFromResponse);
+    this.getGeneric(callback, this.getActiveFromResponse.bind(this));
   }
 
   getInUse(callback: CharacteristicGetCallback) {
-    this.getGeneric(callback, this.getInUseFromResponse);
+    this.getGeneric(callback, this.getInUseFromResponse.bind(this));
   }
 
   getRemainingDuration(callback: CharacteristicGetCallback) {
-    this.getGeneric(callback, this.getRemainingDurationFromResponse);
+    this.getGeneric(callback, this.getRemainingDurationFromResponse.bind(this));
   }
 
   private getActiveFromResponse(response: MieleStatusResponse): number {
