@@ -1,9 +1,9 @@
 {
   "private": false,
-  "displayName": "Miele@Home",
+  "displayName": "Miele@home",
   "name": "homebridge-mieleathome",
   "version": "0.0.0-development",
-  "description": "A start for supporting Miele@Home devices",
+  "description": "A start for supporting Miele@home devices",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -26,11 +26,15 @@
   },
   "keywords": [
     "homebridge-plugin",
-    "Miele"
+    "Miele",
+    "Miele@mobile",
+    "Miele@home",
+    "WTZH"
   ],
   "dependencies": {
-    "axios": "^0.20.0",
+    "axios": "^0.21.0",
     "request": "^2.88.2",
+    "@homebridge/plugin-ui-utils": "^0.0.17",
     "semantic-release-cli": "^5.4.1"
   },
   "devDependencies": {

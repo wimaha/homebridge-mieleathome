@@ -19,8 +19,12 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
   public readonly pollInterval: number = parseInt(<string>this.config.pollInterval);
   public readonly baseURL = 'https://api.mcs3.miele.com/v1/devices';
 
+  
+  public readonly WASHER_ID = 1;
+  public readonly DISH_WASHER_ID = 7;
   public readonly HOOD_RAW_ID = 18;
   public readonly WASHER_DRYER_ID = 24;
+
 
   //-----------------------------------------------------------------------------------------------
   constructor(
@@ -98,31 +102,30 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
             break;
           }
 
-          case this.WASHER_DRYER_ID: {
+          case this.WASHER_DRYER_ID:
+          case this.WASHER_ID: {
             platformAccessoryType = MieleWasherDryerPlatformAccessory;
             break;
           }
           
           default: {
-            this.log.info(`Skipping unsupported device "${deviceObject.displayName} `+
-                          `with type identifier: ${device.ident.type.value_raw}.`);
+            this.log.info(`Skipping unsupported device "${deviceObject.displayName}" `+
+                          `with raw type value: ${device.ident.type.value_raw}.`);
             return;
             break;
           }
           
         }
 
-        // generate a unique id for the accessory this should be generated from
-        // something globally unique, but constant, for example, the device serial
-        // number or MAC address
+        // Generate a unique id for the accessory.
         const uuid = this.api.hap.uuid.generate(deviceObject.uniqueId);
 
-        // see if an accessory with the same uuid has already been registered and restored from
+        // See if an accessory with the same uuid has already been registered and restored from
         // the cached devices we stored in the `configureAccessory` method above
         const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
 
         if (existingAccessory) {
-          // the accessory already exists
+          // The accessory already exists
           this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
           // if you need to update the accessory.context then you should run `api.updatePlatformAccessories`. eg.:
           // existingAccessory.context.device = device;

@@ -1,24 +1,21 @@
-// Miele Washer Dryer accessory.
-// Limitations:
-// - A washer dryer does not allow you to take any action yet (view only).
-// - Homekit maximum remaining duration characteristic is 1h which is too little for a washing machine, but it is the best we have.
-
 import { Service, PlatformAccessory, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback } from 'homebridge';
 
 import { MieleAtHomePlatform } from './platform';
 import { MieleBasePlatformAccessory, MieleStatusResponse } from './mieleBasePlatformAccessory';
 
-import request from 'request';
+import axios from 'axios';
 
-// Washer dryer
+// Miele Washer Dryer accessory. 
 export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessory {
   private valveService: Service;
 
-
-
   private states = {
     active: this.platform.Characteristic.Active.INACTIVE,
+    inUse: this.platform.Characteristic.InUse.NOT_IN_USE,
+    remainingDuration: 0,
   };
+
+  private readonly REVERT_ACTIVATE_REQUEST_TIMEOUT_MS = 500;
 
   constructor(
     platform: MieleAtHomePlatform,
@@ -51,28 +48,30 @@ export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessor
   }
 
   protected update(): void {
-    this.platform.log.debug(`Updating. Request: ${this.requestStateConfig.url}`);
+    this.platform.log.debug(`Update called. Requesting: ${this.stateUrl}`);
 
-    request(this.requestStateConfig, (err: Error | null, res, body: string) => {
-      if (err) {
-        this.platform.log.error(err.message);
-      } else if (res.statusCode === 200){
-        this.valveService.updateCharacteristic(this.platform.Characteristic.Active, this.getActiveFromResponse(JSON.parse(body))); 
+    axios.get(this.stateUrl, this.requestStateConfig).then( (response) => {
+      this.valveService.updateCharacteristic(this.platform.Characteristic.Active, this.getActiveFromResponse(response.data)); 
+      this.valveService.updateCharacteristic(this.platform.Characteristic.InUse, this.getInUseFromResponse(response.data)); 
+      this.valveService.updateCharacteristic(this.platform.Characteristic.RemainingDuration,
+        this.getRemainingDurationFromResponse(response.data)); 
+      
+      this.lastCacheUpdateTime = Date.now();
+    }).catch(response => {
+      if(response.config && response.response) {
+        this.platform.log.error(`Miele API request ${response.config.url} failed with status ${response.response.status}: `+
+                                `"${response.response.statusText}".`);
+      } else {
+        this.platform.log.error(response);
       }
     });
   }
 
-  private getGeneric(callback: CharacteristicGetCallback, func: (response: MieleStatusResponse) => number) {
-    request(this.requestStateConfig, (err: Error | null, res, body: string) => {
-      if (err) {
-        callback(err);
-      } else if (res.statusCode === 200) {
-        callback(null, func(JSON.parse(body)));
-      } else {
-        this.platform.log.error(`Miele API responded with error code: ${res.statusCode}. Failed to retieve status from `+
-                                `'${this.requestStateConfig.url}'.`);
-      }
-    });
+  private isCacheRetired(): boolean {
+    const retired = this.lastCacheUpdateTime < Date.now() - this.CACHE_RETIREMENT_TIME_MS;
+
+    this.platform.log.info('Cache retired. Status update enforced.');
+    return retired;
   }
 
   // Set active not supported for a Miele Washer Dryer.
@@ -85,21 +84,32 @@ export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessor
     if(value !== this.states.active) {
       setTimeout(()=> {
         this.valveService.updateCharacteristic(this.platform.Characteristic.Active, this.states.active); 
-      }, 500);
+      }, this.REVERT_ACTIVATE_REQUEST_TIMEOUT_MS);
     }
     
   }
 
+  // These methods always returns the status from cache wich might be outdated, but will be
+  // updated as soon as possible by the update function.
   getActive(callback: CharacteristicGetCallback) {
-    this.getGeneric(callback, this.getActiveFromResponse.bind(this));
+    if (this.isCacheRetired()) {
+      this.update();
+    }
+    callback(null, this.states.active);
   }
 
   getInUse(callback: CharacteristicGetCallback) {
-    this.getGeneric(callback, this.getInUseFromResponse.bind(this));
+    if (this.isCacheRetired()) {
+      this.update();
+    }
+    callback(null, this.states.inUse);
   }
 
   getRemainingDuration(callback: CharacteristicGetCallback) {
-    this.getGeneric(callback, this.getRemainingDurationFromResponse.bind(this));
+    if (this.isCacheRetired()) {
+      this.update();
+    }
+    callback(null, this.states.remainingDuration);
   }
 
   private getActiveFromResponse(response: MieleStatusResponse): number {
@@ -114,14 +124,11 @@ export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessor
       this.states.active = this.platform.Characteristic.Active.INACTIVE;
     } 
     
-    this.platform.log.debug('Get Characteristic Active:', this.states.active);
+    this.platform.log.debug('Parsed Active from API response:', this.states.active);
     return this.states.active;
   }
 
   private getInUseFromResponse(response: MieleStatusResponse) : number {
-
-    let inUse = this.platform.Characteristic.InUse.NOT_IN_USE;
-
     // Program phase
     // 256 = No program selected
     // 261 - Rinsing
@@ -130,23 +137,23 @@ export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessor
     switch (response.programPhase.value_raw) {
       case 256:
       case 267:
-        inUse = this.platform.Characteristic.InUse.NOT_IN_USE;
+        this.states.inUse = this.platform.Characteristic.InUse.NOT_IN_USE;
         break;
     
       default:
-        inUse = this.platform.Characteristic.InUse.IN_USE;
+        this.states.inUse = this.platform.Characteristic.InUse.IN_USE;
         break;
     }
     
-    this.platform.log.debug('Get Characteristic InUse:', inUse);
-    return inUse;
+    this.platform.log.debug('Parsed InUse from API response:', this.states.inUse);
+    return this.states.inUse;
   }
 
   private getRemainingDurationFromResponse(response: MieleStatusResponse) : number {
 
-    const remainingDuration = response.remainingTime[0]*60*60 + response.remainingTime[1]*60;
+    this.states.remainingDuration = response.remainingTime[0]*60*60 + response.remainingTime[1]*60;
     
-    this.platform.log.debug('Get Characteristic RemainingDuration:', remainingDuration, '[s]');
-    return remainingDuration;
+    this.platform.log.debug('Parsed RemainingDuration from API response:', this.states.remainingDuration, '[s]');
+    return this.states.remainingDuration;
   }
 }

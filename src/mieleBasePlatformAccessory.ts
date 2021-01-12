@@ -12,7 +12,11 @@ export interface MieleStatusResponse {
 // Miele Base Accessory
 // -----------------------------------------------------------------------------------------------------------------------------------------
 export abstract class MieleBasePlatformAccessory {
-  protected requestStateConfig: {method: string; url: string; headers: Record<string, unknown>};
+  protected requestStateConfig: {headers: Record<string, unknown>};
+  protected stateUrl: string;
+  protected lastCacheUpdateTime: number;
+
+  protected readonly CACHE_RETIREMENT_TIME_MS = 10;
 
   constructor(
     protected readonly platform: MieleAtHomePlatform,
@@ -29,9 +33,10 @@ export abstract class MieleBasePlatformAccessory {
       .setCharacteristic(this.platform.Characteristic.FirmwareRevision, firmwareRevision)
       .setCharacteristic(this.platform.Characteristic.SerialNumber, serialNumber);
 
+    this.stateUrl = this.platform.baseURL + '/' + serialNumber + '/state';
+    this.lastCacheUpdateTime = 0;
+
     this.requestStateConfig = {
-      'method': 'GET',
-      'url': this.platform.baseURL + '/' + serialNumber + '/state',
       'headers': { 
         'Authorization': this.platform.token,
         'Content-Type': 'application/json',
