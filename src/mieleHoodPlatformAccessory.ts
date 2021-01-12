@@ -3,7 +3,6 @@ import { Service, PlatformAccessory, CharacteristicValue, CharacteristicSetCallb
 import { MieleAtHomePlatform } from './platform';
 
 import request from 'request';
-import Axios from 'axios';
 
 /**
  * Platform Accessory
