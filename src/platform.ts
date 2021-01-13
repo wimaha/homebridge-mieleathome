@@ -64,17 +64,9 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
   }
 
   //-----------------------------------------------------------------------------------------------
-  // Discover devices
+  // Discover devices from Miele web API and construct supproted devices.
   private async discoverDevices() {
 
-    // const config = {
-    //   'method': 'GET',
-    //   'url': this.baseURL,
-    //   'headers': { 
-    //     'Authorization': this.token,
-    //     'Content-Type': 'application/json',
-    //   },
-    // };
     const config = {
       'headers': { 
         'Authorization': this.token,
@@ -156,82 +148,6 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
         this.log.error(response);
       }
     }
-
-
-
-    // request(config, (err, res, body) => {
-    //   if (err) {
-    //     return(this.log.debug(err));
-    //   }
-    //   const response = JSON.parse(body);
-    //   this.log.debug('Platform::discoverDevices: ', response);
-
-    //   const allDevices = Object.keys(response).map(key => response[key]);
-
-    //   // Loop over the discovered devices and register each one if it has not already been registered
-    //   for (const device of allDevices) {
-
-    //     const deviceObject = {
-    //       uniqueId: device.ident.deviceIdentLabel.fabNumber,
-    //       displayName: device.ident.deviceName || device.ident.type.value_localized,
-    //       modelNumber: device.ident.deviceIdentLabel.techType,
-    //     };
-
-    //     this.log.info(`Discovered device: id: ${deviceObject.uniqueId}, `+
-    //                   `name: ${deviceObject.displayName}, model: ${deviceObject.modelNumber}`);
-
-    //     // Generate a unique id for the accessory.
-    //     const uuid = this.api.hap.uuid.generate(deviceObject.uniqueId);
-
-    //     // See if an accessory with the same uuid has already been registered and restored from
-    //     // the cached devices we stored in the `configureAccessory` method above
-    //     const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
-
-    //     if (existingAccessory) {
-    //       // The accessory already exists
-    //       this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
-
-    //       const accessoryObj = this.constructPlatformAccessory(device.ident.type.value_raw, existingAccessory,
-    //         deviceObject.modelNumber,
-    //         device.ident.xkmIdentLabel.releaseVersion,
-    //         deviceObject.uniqueId);
-
-    //       if(!accessoryObj) {
-    //         this.log.info('Retrieved accessory from cache, but its raw type value is not a supported device. '+
-    //                       `Device: "${deviceObject.displayName}" `+
-    //                       `with raw type value: ${device.ident.type.value_raw}.`);
-    //       }
-
-    //     } else {
-    //       // the accessory does not yet exist, so we need to create it
-    //       this.log.info('Adding new accessory:', deviceObject.displayName);
-
-    //       // Create a new accessory
-    //       const accessory = new this.api.platformAccessory(deviceObject.displayName, uuid);
-
-    //       // Store a copy of the device object in the `accessory.context`
-    //       // the `context` property can be used to store any data about the accessory you may need
-    //       accessory.context.device = deviceObject;
-
-    //       const accessoryObj = this.constructPlatformAccessory(device.ident.type.value_raw, accessory,
-    //         deviceObject.modelNumber,
-    //         device.ident.xkmIdentLabel.releaseVersion,
-    //         deviceObject.uniqueId);
-
-    //       if(accessoryObj) {
-    //         // Link the accessory to your platform
-    //         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
-    //       } else {
-    //         this.log.info('Skipping unsupported device. '+
-    //                       `Device: "${deviceObject.displayName}" `+
-    //                       `with raw type value: ${device.ident.type.value_raw}.`);
-    //       }
-    //     }
-
-
-
-    //   }
-    // });
   }
 
   //-----------------------------------------------------------------------------------------------
