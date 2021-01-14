@@ -17,6 +17,8 @@ _This plugin is in its infancy,_ but functional and actively updated.
 ## Supported Devices
 - Miele Ventilation Hood (credits: [talsalis](https://github.com/talsalis/homebridge-miele-hood)).
 - Miele Washer Dryer Combination or stand alone Washer (e.g. WTZH730, WCG370, and more). Emaulated as a water valve. See [Limitations](#limitations)
+- Miele Washing machine
+- Miele Dishwasher
 
 ## Getting started
 
@@ -47,6 +49,8 @@ Washer Dryer / Washer / Dishwasher:
 
 ## Planned features
 - Automatic token retrieval and refreshing using user provided ClientID and ClientSecret.
+- Optionally enable (current) temperature sensor ofr washing machine like devices.
+- Add support for firdges, ovens and hob highlights.
 
 ## Thanks
 - [MichelRabozee](https://github.com/MichelRabozee)
