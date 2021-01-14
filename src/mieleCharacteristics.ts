@@ -81,7 +81,10 @@ export class MieleInUseCharacteristic extends MieleBinaryStateCharacteristic {
 //-------------------------------------------------------------------------------------------------
 export class MieleActiveCharacteristic extends MieleBinaryStateCharacteristic {      
   private readonly REVERT_ACTIVATE_REQUEST_TIMEOUT_MS = 500;
-  //private readonly allowedActionsURL = this.platform.baseURL + '/' + '/actions';
+  private readonly START_ACTION = 1;
+  private readonly STOP_ACTION = 2;
+  
+  private readonly actionsURL: string;
   private readonly requestConfig = {
     'headers': { 
       'Authorization': this.platform.token,
@@ -93,31 +96,60 @@ export class MieleActiveCharacteristic extends MieleBinaryStateCharacteristic {
     platform: MieleAtHomePlatform,
     service: Service,
     inactiveStates: [number],
+    private serialNumber: string,
   ) {
     super(platform, service, inactiveStates, platform.Characteristic.Active,
       platform.Characteristic.Active.INACTIVE,
       platform.Characteristic.Active.ACTIVE);
+
+    this.actionsURL = this.platform.baseURL + '/' + serialNumber + '/actions';
   }
 
   //-------------------------------------------------------------------------------------------------
-  // Set active not supported for all supported  Miele devices.
+  // Set active
   async set(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-    this.platform.log.debug(`Set characteristic Active: ${value}`);
+    this.platform.log.debug(`Set characteristic Active to: ${value}`);
     
-    // TODO: get deviceId/actions
-    // if response.data.processAction.inlcudes(2) -> we can request 2 using PUT
-    // if not -> revert to our state.
-    //const allowedActions = await axios.get(this.allowedActionsURL, );    
-
+    // Reply asap. Take care of errors later.
     callback(null);
 
-    // Undo state change to emulate a readonly state (since HomeKit valves are read/write)
-    if(value !== this.state) {
-      setTimeout(()=> {
-        this.service.updateCharacteristic(this.platform.Characteristic.Active, this.state); 
-      }, this.REVERT_ACTIVATE_REQUEST_TIMEOUT_MS);
+    // Retrieve allowed actions for this device in the current state.
+    try {
+      const response = await axios.get(this.actionsURL, this.requestConfig);
+      this.platform.log.debug(`${this.serialNumber}: Allowed process actions: ${response.data.processAction} `);
+
+      let mieleProcesAction = this.STOP_ACTION;
+      if(value===1) {
+        mieleProcesAction = this.START_ACTION;
+      }
+
+      // If allowed to execute action.
+      if(response.data.processAction.includes(mieleProcesAction)) {
+        this.platform.log.info(`${this.serialNumber}: Process action "${mieleProcesAction}".`);
+        await axios.put(this.actionsURL, {'processAction': mieleProcesAction}, this.requestConfig);
+      } else {
+        // Requested action not allowed
+        this.platform.log.info(`${this.serialNumber}: Ignoring request to set device to HomeKit value ${value}. Miele action `+
+          `"${mieleProcesAction}" not allowed in current device state. Allowed Miele process actions: "${response.data.processAction}"`);
+        
+        // Undo state change to emulate a readonly state (since HomeKit valves are read/write)
+        if(value !== this.state) {
+          this.platform.log.info(`${this.serialNumber}: Reverting state to ${this.state}.`);
+
+          setTimeout(()=> {
+            this.service.updateCharacteristic(this.platform.Characteristic.Active, this.state); 
+          }, this.REVERT_ACTIVATE_REQUEST_TIMEOUT_MS);
+        }
+      }
+      
+    } catch (response) {
+      if(response.config && response.response) {
+        this.platform.log.error(`Miele API request ${response.config.url} failed with status ${response.response.status}: `+
+                                `"${response.response.statusText}".`);
+      } else {
+        this.platform.log.error(response);
+      }
     }
-    
   }
 }
 

@@ -39,7 +39,7 @@ export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessor
     // 3 = Program selected
     // 5 = In use
     // 7 = Finished
-    const activeCharacteristic = new MieleActiveCharacteristic(this.platform, this.valveService, [1]);
+    const activeCharacteristic = new MieleActiveCharacteristic(this.platform, this.valveService, [1], serialNumber);
     const inUseCharacteristic = new MieleInUseCharacteristic(this.platform, this.valveService, [1, 2, 3, 4, 6, 7]);
     const remainingDurationCharacteristic = new MieleRemainingDurationharacteristic(this.platform, this.valveService);
     this.characteristics.push(activeCharacteristic);
