@@ -38,11 +38,15 @@ _This plugin is in its infancy,_ but functional and actively updated.
 
 ## Limitations
 
-Washer Dryer / Washer:
-- HomeKit does not support a washer dryer. It will be emulated as a valve.
+Washer Dryer / Washer / Dishwasher:
+- HomeKit does not support a washer dryer / washing machine or dish washer. It will be emulated as a valve.
 - A HomeKit valve has a maximum remaining duration of 3600 seconds. The washing machine's remaining duration will thus only reflect the real
   remaining duration as reported by your Miele device when the duration decreases to a value less than 3600 seconds.
-- A HomeKit valve can be turned on/off, however Miele's 3rd party Web API does not allow you to turn on/off the washing machine. Flipping the valve will thus nearly immediately revert the action.
+- A HomeKit valve can be turned on and off, however Miele's 3rd party Web API does not allow you to turn _on_ the washing machine. 
+  Switching it of will result in issueing a stop command towards the washing machine when its state allows it.
 
 ## Planned features
 - Automatic token retrieval and refreshing using user provided ClientID and ClientSecret.
+
+## Thanks
+- [MichelRabozee](https://github.com/MichelRabozee)

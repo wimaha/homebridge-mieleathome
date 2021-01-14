@@ -25,7 +25,7 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
 
   // Readonly constants
   public readonly WASHER_ID = 1;
-  public readonly DISH_WASHER_ID = 7;
+  public readonly DISHWASHER_ID = 7;
   public readonly HOOD_RAW_ID = 18;
   public readonly WASHER_DRYER_ID = 24;
 
@@ -77,13 +77,15 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
     try {
       const response = await axios.get(this.baseURL, config);
       this.log.debug('Discovered devices: ', response.data);
-      const allDevices = Object.keys(response.data).map(key => response.data[key]);
+      
+      const allDeviceIds = Object.keys(response.data);
 
       // Loop over the discovered devices and register each one if it has not already been registered
-      for (const device of allDevices) {
+      for (const deviceId of allDeviceIds) {
 
+        const device = response.data[deviceId];
         const deviceObject = {
-          uniqueId: device.ident.deviceIdentLabel.fabNumber,
+          uniqueId: deviceId,
           displayName: device.ident.deviceName || device.ident.type.value_localized,
           modelNumber: device.ident.deviceIdentLabel.techType,
         };
@@ -114,10 +116,8 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
           }
 
         } else {
-          // the accessory does not yet exist, so we need to create it
-          this.log.info('Adding new accessory:', deviceObject.displayName);
-
-          // Create a new accessory
+          // The accessory does not yet exist, so we need to create it.
+          // Create a new accessory which might be disposed of later when the device is not supported.
           const accessory = new this.api.platformAccessory(deviceObject.displayName, uuid);
 
           // Store a copy of the device object in the `accessory.context`
@@ -130,10 +130,11 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
             deviceObject.uniqueId);
 
           if(accessoryObj) {
-            // Link the accessory to your platform
+            // Link the newly created accessory to your platform.
+            this.log.info('Registering new accessory:', deviceObject.displayName);
             this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
           } else {
-            this.log.info('Skipping unsupported device. '+
+            this.log.info('Ignoring unsupported device. '+
                           `Device: "${deviceObject.displayName}" `+
                           `with raw type value: ${device.ident.type.value_raw}.`);
           }
@@ -163,7 +164,8 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
       }
 
       case this.WASHER_DRYER_ID:
-      case this.WASHER_ID: {
+      case this.WASHER_ID:
+      case this.DISHWASHER_ID: {
         return new MieleWasherDryerPlatformAccessory(this, accessory, model, firmwareRevision, serialNumber);
         break;
       }

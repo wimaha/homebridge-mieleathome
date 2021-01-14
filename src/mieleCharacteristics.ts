@@ -5,6 +5,7 @@ import { Service, CharacteristicValue, CharacteristicSetCallback, Characteristic
 
 import { MieleAtHomePlatform } from './platform';
 import { MieleStatusResponse } from './mieleBasePlatformAccessory';
+import axios from 'axios';
 
 //-------------------------------------------------------------------------------------------------
 // Interface Miele Characteristic
@@ -80,6 +81,13 @@ export class MieleInUseCharacteristic extends MieleBinaryStateCharacteristic {
 //-------------------------------------------------------------------------------------------------
 export class MieleActiveCharacteristic extends MieleBinaryStateCharacteristic {      
   private readonly REVERT_ACTIVATE_REQUEST_TIMEOUT_MS = 500;
+  //private readonly allowedActionsURL = this.platform.baseURL + '/' + '/actions';
+  private readonly requestConfig = {
+    'headers': { 
+      'Authorization': this.platform.token,
+      'Content-Type': 'application/json',
+    },
+  };
 
   constructor(
     platform: MieleAtHomePlatform,
@@ -93,9 +101,14 @@ export class MieleActiveCharacteristic extends MieleBinaryStateCharacteristic {
 
   //-------------------------------------------------------------------------------------------------
   // Set active not supported for all supported  Miele devices.
-  set(value: CharacteristicValue, callback: CharacteristicSetCallback) {
+  async set(value: CharacteristicValue, callback: CharacteristicSetCallback) {
     this.platform.log.debug(`Set characteristic Active: ${value}`);
     
+    // TODO: get deviceId/actions
+    // if response.data.processAction.inlcudes(2) -> we can request 2 using PUT
+    // if not -> revert to our state.
+    //const allowedActions = await axios.get(this.allowedActionsURL, );    
+
     callback(null);
 
     // Undo state change to emulate a readonly state (since HomeKit valves are read/write)

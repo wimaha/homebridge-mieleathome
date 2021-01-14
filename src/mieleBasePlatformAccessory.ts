@@ -23,8 +23,8 @@ export interface MieleStatusResponse {
 //-------------------------------------------------------------------------------------------------
 export abstract class MieleBasePlatformAccessory {
   private requestStateConfig: {headers: Record<string, unknown>};
-  private stateUrl: string;
-  private lastCacheUpdateTime: number;
+  private stateUrl = this.platform.baseURL + '/' + this.serialNumber + '/state';
+  private lastCacheUpdateTime = 0;
   private cacheUpdateQueued = false;
   protected characteristics: IMieleCharacteristic[] = [];
 
@@ -46,9 +46,6 @@ export abstract class MieleBasePlatformAccessory {
       .setCharacteristic(this.platform.Characteristic.Model, model)
       .setCharacteristic(this.platform.Characteristic.FirmwareRevision, firmwareRevision)
       .setCharacteristic(this.platform.Characteristic.SerialNumber, serialNumber);
-
-    this.stateUrl = this.platform.baseURL + '/' + serialNumber + '/state';
-    this.lastCacheUpdateTime = 0;
 
     this.requestStateConfig = {
       'headers': { 
