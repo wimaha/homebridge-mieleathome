@@ -67,7 +67,7 @@ export abstract class MieleBasePlatformAccessory {
        !this.cacheUpdateQueued;
 
     if (retired) {
-      this.platform.log.info('Cache retired. Status update enforced.');
+      this.platform.log.debug('Cache retired. Status update enforced.');
     }
     return retired;
   }
