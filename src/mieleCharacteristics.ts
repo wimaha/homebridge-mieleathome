@@ -129,7 +129,7 @@ export class MieleActiveCharacteristic extends MieleBinaryStateCharacteristic {
         await axios.put(this.actionsURL, {'processAction': mieleProcesAction}, this.requestConfig);
       } else {
         // Requested action not allowed
-        this.platform.log.info(`${this.serialNumber}: Ignoring request to set device to HomeKit value ${value}. Miele action `+
+        this.platform.log.info(`${this.serialNumber}: Ignoring request to set device to HomeKit value "${value}". Miele action `+
           `"${mieleProcesAction}" not allowed in current device state. Allowed Miele process actions: "${response.data.processAction}"`);
         
         // Undo state change to emulate a readonly state (since HomeKit valves are read/write)
