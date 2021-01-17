@@ -2,7 +2,7 @@
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
 [![npm version](https://badge.fury.io/js/homebridge-mieleathome.svg)](https://badge.fury.io/js/homebridge-mieleathome)
 
-![Miele](https://media.miele.com/media/miele_com/media/miele-logo-immer-besser.png "Miele - Immer besser")
+![Miele + Homebridge](./homebridge-ui/public/miele-homebridge.png "Miele + Homebridge")
 
 
 # Miele@home Homebridge plugin
@@ -16,9 +16,9 @@ _This plugin is in its infancy,_ but functional and actively updated.
 
 ## Supported Devices
 - Miele Ventilation Hood (credits: [talsalis](https://github.com/talsalis/homebridge-miele-hood)).
-- Miele Washer Dryer Combination or stand alone Washer (e.g. WTZH730, WCG370, and more). Emaulated as a water valve. See [Limitations](#limitations)
-- Miele Washing machine
-- Miele Dishwasher
+- Miele Washer Dryer Combination (e.g. WTZH730). 
+- Miele Washing machine (e.g. WCG370).
+- Miele Dishwasher.
 
 ## Getting started
 
