@@ -26,7 +26,8 @@ abstract class MieleBinaryStateCharacteristic implements IMieleCharacteristic {
   constructor(
     protected platform: MieleAtHomePlatform,
     protected service: Service,
-    private readonly inactiveStates: number[],
+    private readonly inactiveStates: number[] | null,
+    private readonly activeStates: number[] | null,
     private readonly characteristicType,
     private readonly offState: number,
     private readonly onState: number,
@@ -48,10 +49,21 @@ abstract class MieleBinaryStateCharacteristic implements IMieleCharacteristic {
 
   //-------------------------------------------------------------------------------------------------
   update(response: MieleStatusResponse): void {
-    if(this.inactiveStates.includes(response.status.value_raw)) {
+    
+    if(this.inactiveStates===null && this.activeStates===null) {
+      throw new Error('Only supply valid inactive or active states, not both.');
+    }
+
+    if(this.inactiveStates && this.inactiveStates.includes(response.status.value_raw)) {
       this.state = this.offState;
     } else {
       this.state = this.onState;
+    }
+
+    if(this.activeStates && this.activeStates.includes(response.status.value_raw)) {
+      this.state = this.onState;
+    } else {
+      this.state = this.offState;
     }
     
     this.platform.log.debug(`Parsed ${this.characteristicType.name} from API response: ${this.state}`);
@@ -68,9 +80,10 @@ export class MieleInUseCharacteristic extends MieleBinaryStateCharacteristic {
   constructor(
     platform: MieleAtHomePlatform,
     service: Service,
-    inactiveStates: number[],
+    inactiveStates: number[] | null,
+    activeStates: number[] | null,
   ) {
-    super(platform, service, inactiveStates, platform.Characteristic.InUse,
+    super(platform, service, inactiveStates, activeStates, platform.Characteristic.InUse,
       platform.Characteristic.InUse.NOT_IN_USE,
       platform.Characteristic.InUse.IN_USE);
   }
@@ -95,10 +108,12 @@ export class MieleActiveCharacteristic extends MieleBinaryStateCharacteristic {
   constructor(
     platform: MieleAtHomePlatform,
     service: Service,
-    inactiveStates: [number],
+    inactiveStates: number[] | null,
+    activeStates: number[] | null,
     private serialNumber: string,
+    private disableStopAction: boolean,
   ) {
-    super(platform, service, inactiveStates, platform.Characteristic.Active,
+    super(platform, service, inactiveStates, activeStates, platform.Characteristic.Active,
       platform.Characteristic.Active.INACTIVE,
       platform.Characteristic.Active.ACTIVE);
 
@@ -112,8 +127,14 @@ export class MieleActiveCharacteristic extends MieleBinaryStateCharacteristic {
     
     callback(null);
 
-    // Retrieve allowed actions for this device in the current state.
+    if(this.disableStopAction && value===0) {
+      this.platform.log.info(`${this.serialNumber}: Ignoring stop request.`);
+      this.undoSetState(value);
+      return;
+    }
+
     try {
+      // Retrieve allowed actions for this device in the current state.
       const response = await axios.get(this.actionsURL, this.requestConfig);
       this.platform.log.debug(`${this.serialNumber}: Allowed process actions: ${response.data.processAction} `);
 
@@ -134,13 +155,7 @@ export class MieleActiveCharacteristic extends MieleBinaryStateCharacteristic {
           `actions: ${response.data.processAction}`);
         
         // Undo state change to emulate a readonly state (since HomeKit valves are read/write)
-        if(value !== this.state) {
-          this.platform.log.info(`${this.serialNumber}: Reverting state to ${this.state}.`);
-
-          setTimeout(()=> {
-            this.service.updateCharacteristic(this.platform.Characteristic.Active, this.state); 
-          }, this.REVERT_ACTIVATE_REQUEST_TIMEOUT_MS);
-        }
+        this.undoSetState(value);
       }      
     } catch (response) {
       if(response.config && response.response) {
@@ -151,6 +166,19 @@ export class MieleActiveCharacteristic extends MieleBinaryStateCharacteristic {
       }
     }
   }
+
+  //-------------------------------------------------------------------------------------------------
+  // Undo state
+  private undoSetState(value: CharacteristicValue) {
+    if(value !== this.state) {
+      this.platform.log.info(`${this.serialNumber}: Reverting state to ${this.state}.`);
+
+      setTimeout(()=> {
+        this.service.updateCharacteristic(this.platform.Characteristic.Active, this.state); 
+      }, this.REVERT_ACTIVATE_REQUEST_TIMEOUT_MS);
+    }
+  }
+
 }
 
 //-------------------------------------------------------------------------------------------------

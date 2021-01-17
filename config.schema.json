@@ -2,7 +2,7 @@
   "pluginAlias": "MieleAtHome",
   "pluginType": "platform",
   "singular": true,
-  "customUi": false,
+  "customUi": true,
   "schema": {
     "type": "object",
     "properties": {
@@ -10,7 +10,20 @@
         "title": "Name",
         "type": "string",
         "required": true,
-        "default": "Miele@Home"
+        "default": "",
+        "description": "Plugin name as displayed in the Homebridge log."
+      },
+      "clientID": {
+        "title": "Client ID",
+        "type": "string",
+        "required": true,
+        "default": ""
+      },
+      "clientSecret": {
+        "title": "Client Secret",
+        "type": "string",
+        "required": true,
+        "default": ""
       },
       "token": {
         "title": "Token",
@@ -18,13 +31,43 @@
         "required": true,
         "default": ""
       },
+      "refereshToken": {
+        "title": "Refresh token",
+        "type": "string",
+        "required": true,
+        "default": ""
+      },
+      "language": {
+        "title": "Language",
+        "type": "string",
+        "default": "en",
+        "oneOf": [
+          { "title": "English", "enum": ["en"] },
+          { "title": "Deutsch", "enum": ["de"] }
+        ],
+        "description": "Determines in what language the device name will be displayed in HomeKit."
+      },
       "pollInterval": {
         "title": "Poll interval [s]",
         "type": "number",
         "required": false,
-        "default": 60
+        "minimum": 0,
+        "default": 60,
+        "description": "The number of seconds between update retrievals or 0 to disable."
+      },
+      "disableStopActionFor": {
+        "title": "Disable stop action for",
+        "type": "array",
+        "uniqueItems": true,
+        "items": {
+          "title": "Disable stop action for",
+          "type": "string",
+          "enum": [
+            "Washing Machines",
+            "Dishwashers"
+          ]
+        }
       }
-
     }
   }
 }
