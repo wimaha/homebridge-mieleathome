@@ -1,53 +1,51 @@
-<div class="card card-body">
+<!-- Miele@homebridge custom setup UI.
+  -- Work in progress. Currently automated setup is disabled. -->
 
-    <!-- Shown when setup is complete or the plugin is already configured. -->
-    <div id="setupRequired" style="display:none;">
-        <form id="step1">
-        <div class="form-group">
-            <label for="clientIdInput">Client ID</label>
-            <input type="text" class="form-control" id="clientIdInput" required>
-        </div>
-        <div class="form-group">
-            <label for="clientSecretInput">Client Secret</label>
-            <input type="text" class="form-control" id="clientSecretInput" required>
-        </div>
-        <div class="text-center">
-            <button id="step1Submit" type="button" class="btn btn-primary">Next</button>
-        </div>
-        </form>
+<img src="./miele-homebridge.png"/>
 
-        <form id="step2" style="display:none;">
-        <div class="form-group">
-            <label for="clientIdInput">Client ID</label>
-            <input type="text" class="form-control" id="clientIdInput" required>
-        </div>
-        <div class="form-group">
-            <label for="clientSecretInput">Client Secret</label>
-            <input type="text" class="form-control" id="clientSecretInput" required>
-        </div>
-        <div class="text-center">
-            <button id="step2Submit" type="button" class="btn btn-primary">Next</button>
-        </div>
-        </form>
+<!-- Setup required. -->
+<div id="setupRequired" style="display:none;" class="card card-body">
+    <form id="step1">
+    <div class="form-group">
+        <label for="clientIdInput">Client ID</label>
+        <input type="text" class="form-control" id="clientIdInput" required>
     </div>
-    
+    <div class="form-group">
+        <label for="clientSecretInput">Client Secret</label>
+        <input type="text" class="form-control" id="clientSecretInput" required>
+    </div>
+    <div class="text-center">
+        <button id="step1Submit" type="button" class="btn btn-primary">Next</button>
+    </div>
+    </form>
 
-
-
-
+    <form id="step2" style="display:none;">
+    <div class="form-group">
+        <label for="clientIdInput">Client ID</label>
+        <input type="text" class="form-control" id="clientIdInput" required>
+    </div>
+    <div class="form-group">
+        <label for="clientSecretInput">Client Secret</label>
+        <input type="text" class="form-control" id="clientSecretInput" required>
+    </div>
+    <div class="text-center">
+        <button id="step2Submit" type="button" class="btn btn-primary">Next</button>
+    </div>
+    </form>
 </div>
+
   
   <script>
     (async () => {
       // Get the initial config - this is an array potentially containing multiple config blocks
       const pluginConfig = await homebridge.getPluginConfig();
   
-      // get the intial from the config and add it to the form
-      if (!pluginConfig.length) {
-        document.getElementById('setupRequired').style.display = 'block';
-      } else {
-        document.getElementById('setupRequired').style.display = 'block';
-      }
+      // Get the intial from the config and add it to the form
+      //if (!pluginConfig.length) {
+      //  document.getElementById('setupRequired').style.display = 'block';
+      //} else {
+        homebridge.showSchemaForm();
+      //}
   
       // Step 1 submit handler.
       document.getElementById('step1Submit').addEventListener('click', async () => {
@@ -65,11 +63,12 @@
             return;
         }
 
-
         document.getElementById('step1Submit').setAttribute('disabled', 'disabled');
 
         try {
             homebridge.showSpinner()
+            //const response = `https://api.mcs3.miele.com/thirdparty/login?client_id=${clientId}&response_type=code&redirect_uri=http://localhost:8000&state=1`);
+
             await homebridge.request('/token', { username: "sander" });
             homebridge.hideSpinner()
             // document.getElementById('step1').style.display = 'none';
@@ -88,7 +87,7 @@
 
 
 
-
+/*
       // watch for click events on the getTokenButton
       document.querySelector('#getTokenButton').addEventListener('click', async () => {
         // validate a username was provided
@@ -124,7 +123,7 @@
           // remember to un-hide the spinner
           homebridge.hideSpinner();
         }
-      });
+      });*/
   
     })();
   

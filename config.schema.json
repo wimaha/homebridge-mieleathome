@@ -69,5 +69,37 @@
         }
       }
     }
-  }
+  },
+  "form": [
+    "name",
+    {
+      "type": "fieldset",
+      "expandable": true,
+      "title": "Authorization",
+      "items": [
+        "clientID",
+        "clientSecret",
+        "token",
+        "refreshToken"
+      ]
+    },
+    {
+      "type": "fieldset",
+      "expandable": true,
+      "title": "General",
+      "items": [
+        "pollInterval",
+        "language"
+      ]
+    },
+    {
+      "type": "fieldset",
+      "expandable": true,
+      "title": "Advanced",
+      "description": "Non-default customizations.",
+      "items": [
+        "disableStopActionFor"
+      ]
+    }
+  ]
 }
