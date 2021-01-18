@@ -109,10 +109,7 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
           // The accessory already exists
           this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
 
-          const accessoryObj = this.constructPlatformAccessory(device.ident.type.value_raw, existingAccessory,
-            deviceObject.modelNumber,
-            deviceObject.firmwareRevision,
-            deviceObject.uniqueId);
+          const accessoryObj = this.constructPlatformAccessory(device.ident.type.value_raw, existingAccessory);
 
           if(!accessoryObj) {
             this.log.error('Retrieved accessory from cache, but its raw type value is not a supported device. '+
@@ -129,10 +126,7 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
           // the `context` property can be used to store any data about the accessory you may need
           accessory.context.device = deviceObject;
 
-          const accessoryObj = this.constructPlatformAccessory(device.ident.type.value_raw, accessory,
-            deviceObject.modelNumber,
-            deviceObject.firmwareRevision,
-            deviceObject.uniqueId);
+          const accessoryObj = this.constructPlatformAccessory(device.ident.type.value_raw, accessory);
 
           if(accessoryObj) {
             // Link the newly created accessory to your platform.
@@ -158,13 +152,12 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
 
   //-----------------------------------------------------------------------------------------------
   // Construct accessory
-  private constructPlatformAccessory(raw_id: number, accessory: PlatformAccessory, 
-    model: string, firmwareRevision: string, serialNumber: string) {
+  private constructPlatformAccessory(raw_id: number, accessory: PlatformAccessory) {
 
     switch (raw_id) {
       case this.HOOD_RAW_ID: {
         // TODO: Change to class deriving from BasePlatformAccessory.
-        return new MieleHoodPlatformAccessory(this, accessory, model, serialNumber);
+        return new MieleHoodPlatformAccessory(this, accessory);
         break;
       }
 

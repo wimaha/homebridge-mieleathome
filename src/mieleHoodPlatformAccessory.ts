@@ -27,17 +27,15 @@ export class MieleHoodPlatformAccessory {
   constructor(
     private readonly platform: MieleAtHomePlatform,
     private readonly accessory: PlatformAccessory,
-    private readonly model: string,
-    private readonly serialNumber: string,
   ) {
 
     // Set accessory information
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Miele')
-      .setCharacteristic(this.platform.Characteristic.Model, model)
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, serialNumber);
+      .setCharacteristic(this.platform.Characteristic.Model, accessory.context.device.modelNumber)
+      .setCharacteristic(this.platform.Characteristic.SerialNumber, accessory.context.device.uniqueId);
 
-    this.url = this.platform.baseURL + '/' + serialNumber;
+    this.url = this.platform.baseURL + '/' + accessory.context.device.modelNumber;
 
     this.platform.log.debug('URL ->', this.url);
 
