@@ -22,12 +22,9 @@ export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessor
   constructor(
     platform: MieleAtHomePlatform,
     accessory: PlatformAccessory,
-    model: string,
-    firmwareRevision: string,
-    serialNumber: string,
     disableStopAction: boolean,
   ) {
-    super(platform, accessory, model, firmwareRevision, serialNumber);
+    super(platform, accessory);
 
     this.valveService = this.accessory.getService(this.platform.Service.Valve) || this.accessory.addService(this.platform.Service.Valve);
 
@@ -43,8 +40,8 @@ export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessor
     // 6 = 
     // 7 = Finished
     // 9 = Cancelled
-    const activeCharacteristic = new MieleActiveCharacteristic(this.platform, this.valveService, [1], null, serialNumber,
-      disableStopAction);
+    const activeCharacteristic = new MieleActiveCharacteristic(this.platform, this.valveService, [1], null,
+      accessory.context.device.uniqueId, disableStopAction);
     const inUseCharacteristic = new MieleInUseCharacteristic(this.platform, this.valveService, null, [5]);
     const remainingDurationCharacteristic = new MieleRemainingDurationharacteristic(this.platform, this.valveService);
     this.characteristics.push(activeCharacteristic);

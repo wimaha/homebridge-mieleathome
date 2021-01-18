@@ -90,6 +90,7 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
         const device = response.data[deviceId];
         const deviceObject = {
           uniqueId: deviceId,
+          firmwareRevision: device.ident.xkmIdentLabel.releaseVersion,
           displayName: device.ident.deviceName || device.ident.type.value_localized,
           modelNumber: device.ident.deviceIdentLabel.techType,
         };
@@ -110,11 +111,11 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
 
           const accessoryObj = this.constructPlatformAccessory(device.ident.type.value_raw, existingAccessory,
             deviceObject.modelNumber,
-            device.ident.xkmIdentLabel.releaseVersion,
+            deviceObject.firmwareRevision,
             deviceObject.uniqueId);
 
           if(!accessoryObj) {
-            this.log.info('Retrieved accessory from cache, but its raw type value is not a supported device. '+
+            this.log.error('Retrieved accessory from cache, but its raw type value is not a supported device. '+
                           `Device: "${deviceObject.displayName}" `+
                           `with raw type value: ${device.ident.type.value_raw}.`);
           }
@@ -130,7 +131,7 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
 
           const accessoryObj = this.constructPlatformAccessory(device.ident.type.value_raw, accessory,
             deviceObject.modelNumber,
-            device.ident.xkmIdentLabel.releaseVersion,
+            deviceObject.firmwareRevision,
             deviceObject.uniqueId);
 
           if(accessoryObj) {
@@ -169,10 +170,10 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
 
       case this.WASHER_DRYER_ID:
       case this.WASHER_ID:
-        return new MieleWasherDryerPlatformAccessory(this, accessory, model, firmwareRevision, serialNumber, 
+        return new MieleWasherDryerPlatformAccessory(this, accessory, 
           this.disableStopActionFor.includes('Washing Machines'));
       case this.DISHWASHER_ID: 
-        return new MieleWasherDryerPlatformAccessory(this, accessory, model, firmwareRevision, serialNumber,
+        return new MieleWasherDryerPlatformAccessory(this, accessory,
           this.disableStopActionFor.includes('Dishwashers'));
       
       default:

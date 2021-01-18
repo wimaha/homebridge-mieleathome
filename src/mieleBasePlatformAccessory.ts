@@ -23,7 +23,7 @@ export interface MieleStatusResponse {
 //-------------------------------------------------------------------------------------------------
 export abstract class MieleBasePlatformAccessory {
   private requestStateConfig: {headers: Record<string, unknown>};
-  private stateUrl = this.platform.baseURL + '/' + this.serialNumber + '/state';
+  private stateUrl = this.platform.baseURL + '/' + this.accessory.context.device.uniqueId + '/state';
   private lastCacheUpdateTime = 0;
   private cacheUpdateQueued = false;
   protected characteristics: IMieleCharacteristic[] = [];
@@ -35,17 +35,14 @@ export abstract class MieleBasePlatformAccessory {
   constructor(
     protected readonly platform: MieleAtHomePlatform,
     protected readonly accessory: PlatformAccessory,
-    protected readonly model: string,
-    protected readonly firmwareRevision: string,
-    protected readonly serialNumber: string,
   ) {
 
     // Set accessory information.
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Miele')
-      .setCharacteristic(this.platform.Characteristic.Model, model)
-      .setCharacteristic(this.platform.Characteristic.FirmwareRevision, firmwareRevision)
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, serialNumber);
+      .setCharacteristic(this.platform.Characteristic.Model, accessory.context.device.modelNumber)
+      .setCharacteristic(this.platform.Characteristic.FirmwareRevision, accessory.context.device.firmwareRevision)
+      .setCharacteristic(this.platform.Characteristic.SerialNumber, accessory.context.device.uniqueId);
 
     this.requestStateConfig = {
       'headers': { 
