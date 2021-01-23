@@ -3,9 +3,16 @@
 
 import { Service, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback } from 'homebridge';
 
+import { BASE_URL, REVERT_ACTIVATE_REQUEST_TIMEOUT_MS } from './settings';
 import { MieleAtHomePlatform } from './platform';
-import { MieleStatusResponse } from './mieleBasePlatformAccessory';
+import { MieleStatusResponse, MieleState } from './mieleBasePlatformAccessory';
 import axios from 'axios';
+
+
+enum MieleProcessAction {
+  Stop = 2,
+  Start = 1,
+}
 
 //-------------------------------------------------------------------------------------------------
 // Interface Miele Characteristic
@@ -16,7 +23,6 @@ export interface IMieleCharacteristic {
   update(esponse: MieleStatusResponse): void;
 }
 
-
 //-------------------------------------------------------------------------------------------------
 // Base class: Miele Binary State Characteristic
 //-------------------------------------------------------------------------------------------------
@@ -26,8 +32,8 @@ abstract class MieleBinaryStateCharacteristic implements IMieleCharacteristic {
   constructor(
     protected platform: MieleAtHomePlatform,
     protected service: Service,
-    private readonly inactiveStates: number[] | null,
-    private readonly activeStates: number[] | null,
+    private readonly inactiveStates: MieleState[] | null,
+    private readonly activeStates: MieleState[] | null,
     private readonly characteristicType,
     private readonly offState: number,
     private readonly onState: number,
@@ -80,8 +86,8 @@ export class MieleInUseCharacteristic extends MieleBinaryStateCharacteristic {
   constructor(
     platform: MieleAtHomePlatform,
     service: Service,
-    inactiveStates: number[] | null,
-    activeStates: number[] | null,
+    inactiveStates: MieleState[] | null,
+    activeStates: MieleState[] | null,
   ) {
     super(platform, service, inactiveStates, activeStates, platform.Characteristic.InUse,
       platform.Characteristic.InUse.NOT_IN_USE,
@@ -93,9 +99,6 @@ export class MieleInUseCharacteristic extends MieleBinaryStateCharacteristic {
 // Miele Active Characteristic. 
 //-------------------------------------------------------------------------------------------------
 export class MieleActiveCharacteristic extends MieleBinaryStateCharacteristic {      
-  private readonly REVERT_ACTIVATE_REQUEST_TIMEOUT_MS = 500;
-  private readonly START_ACTION = 1;
-  private readonly STOP_ACTION = 2;
   
   private readonly actionsURL: string;
   private readonly requestConfig = {
@@ -108,8 +111,8 @@ export class MieleActiveCharacteristic extends MieleBinaryStateCharacteristic {
   constructor(
     platform: MieleAtHomePlatform,
     service: Service,
-    inactiveStates: number[] | null,
-    activeStates: number[] | null,
+    inactiveStates: MieleState[] | null,
+    activeStates: MieleState[] | null,
     private serialNumber: string,
     private disableStopAction: boolean,
   ) {
@@ -117,7 +120,7 @@ export class MieleActiveCharacteristic extends MieleBinaryStateCharacteristic {
       platform.Characteristic.Active.INACTIVE,
       platform.Characteristic.Active.ACTIVE);
 
-    this.actionsURL = this.platform.baseURL + '/' + serialNumber + '/actions';
+    this.actionsURL = BASE_URL + '/' + serialNumber + '/actions';
   }
 
   //-------------------------------------------------------------------------------------------------
@@ -138,21 +141,21 @@ export class MieleActiveCharacteristic extends MieleBinaryStateCharacteristic {
       const response = await axios.get(this.actionsURL, this.requestConfig);
       this.platform.log.debug(`${this.serialNumber}: Allowed process actions: ${response.data.processAction} `);
 
-      let mieleProcesAction = {raw_id: this.STOP_ACTION, name: 'STOP'};
+      let mieleProcesAction = MieleProcessAction.Stop;
       if(value===1) {
-        mieleProcesAction = {raw_id: this.START_ACTION, name: 'START'};
+        mieleProcesAction = MieleProcessAction.Start;
       }
 
       // If allowed to execute action.
-      if(response.data.processAction.includes(mieleProcesAction.raw_id)) {
-        this.platform.log.info(`${this.serialNumber}: Process action "${mieleProcesAction.name}" (${mieleProcesAction.raw_id}).`);
-        const response = await axios.put(this.actionsURL, {processAction: mieleProcesAction.raw_id}, this.requestConfig);
+      if(response.data.processAction.includes(mieleProcesAction)) {
+        this.platform.log.info(`${this.serialNumber}: Process action "${MieleProcessAction[mieleProcesAction]}" (${mieleProcesAction}).`);
+        const response = await axios.put(this.actionsURL, {processAction: mieleProcesAction}, this.requestConfig);
         this.platform.log.debug(`Process action response code: ${response.status}: "${response.statusText}"`);
       } else {
         // Requested action not allowed
         this.platform.log.info(`${this.serialNumber}: Ignoring request to set device to HomeKit value ${value}. Miele action `+
-          `"${mieleProcesAction.name}" (${mieleProcesAction.raw_id}) not allowed in current device state. Allowed Miele process `+
-          `actions: ${response.data.processAction}`);
+          `"${MieleProcessAction[mieleProcesAction]}" (${mieleProcesAction}) not allowed in current device state. Allowed Miele process `+
+          `actions: ${response.data.processAction ? '<none>' : response.data.processAction}`);
         
         // Undo state change to emulate a readonly state (since HomeKit valves are read/write)
         this.undoSetState(value);
@@ -175,7 +178,7 @@ export class MieleActiveCharacteristic extends MieleBinaryStateCharacteristic {
 
       setTimeout(()=> {
         this.service.updateCharacteristic(this.platform.Characteristic.Active, this.state); 
-      }, this.REVERT_ACTIVATE_REQUEST_TIMEOUT_MS);
+      }, REVERT_ACTIVATE_REQUEST_TIMEOUT_MS);
     }
   }
 

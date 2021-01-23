@@ -1,5 +1,6 @@
 import { Service, PlatformAccessory, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback } from 'homebridge';
 
+import { BASE_URL } from './settings';
 import { MieleAtHomePlatform } from './platform';
 
 import request from 'request';
@@ -35,7 +36,7 @@ export class MieleHoodPlatformAccessory {
       .setCharacteristic(this.platform.Characteristic.Model, accessory.context.device.modelNumber)
       .setCharacteristic(this.platform.Characteristic.SerialNumber, accessory.context.device.uniqueId);
 
-    this.url = this.platform.baseURL + '/' + accessory.context.device.modelNumber;
+    this.url = BASE_URL + '/' + accessory.context.device.modelNumber;
 
     this.platform.log.debug('URL ->', this.url);
 

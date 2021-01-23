@@ -3,7 +3,7 @@
 
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 
-import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
+import { PLATFORM_NAME, PLUGIN_NAME, BASE_URL } from './settings';
 import { MieleHoodPlatformAccessory } from './mieleHoodPlatformAccessory';
 import { MieleWasherDryerPlatformAccessory } from './mieleWasherDryerPlatformAccessory';
 
@@ -21,7 +21,6 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
 
   public readonly token = 'Bearer ' + this.config.token;
   public readonly pollInterval: number = parseInt(<string>this.config.pollInterval);
-  public readonly baseURL = 'https://api.mcs3.miele.com/v1/devices';
   public readonly language = this.config.language || '';
   public readonly disableStopActionFor: string[] = <string[]>this.config.disableStopActionFor || [];
 
@@ -46,7 +45,12 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
     // to start discovery of new accessories.
     this.api.on('didFinishLaunching', () => {
       log.debug('Executed didFinishLaunching callback');
-      
+
+      // Construct Token from disk.
+      // Check if token is expired by checking token creation date + "expires_in" < now
+      // If not on disk, create on disk from config
+      // if expired: Token.refresh (replaces token on disk)
+
       if (!this.token || this.token==='') {
         this.log.error('No token defined.');
       } else {
@@ -77,8 +81,8 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
     };
 
     try {
-      const url = this.baseURL+'?language='+this.language;
-      this.log.debug(`Reequesting devices: "${url}"`);
+      const url = BASE_URL+'?language='+this.language;
+      this.log.debug(`Requesting devices: "${url}"`);
       const response = await axios.get(url, config);
       
       const allDeviceIds = Object.keys(response.data);

@@ -4,7 +4,7 @@
 import { Service, PlatformAccessory } from 'homebridge';
 
 import { MieleAtHomePlatform } from './platform';
-import { MieleBasePlatformAccessory } from './mieleBasePlatformAccessory';
+import { MieleBasePlatformAccessory, MieleState } from './mieleBasePlatformAccessory';
 
 import { MieleActiveCharacteristic, MieleInUseCharacteristic, MieleRemainingDurationharacteristic } 
   from './mieleCharacteristics';
@@ -14,9 +14,6 @@ import { MieleActiveCharacteristic, MieleInUseCharacteristic, MieleRemainingDura
 //-------------------------------------------------------------------------------------------------
 export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessory {
   private valveService: Service;
-
-  // Readonly constants
-  private readonly REVERT_ACTIVATE_REQUEST_TIMEOUT_MS = 500;
 
   //-----------------------------------------------------------------------------------------------
   constructor(
@@ -32,17 +29,9 @@ export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessor
     this.valveService.setCharacteristic(this.platform.Characteristic.Name, accessory.context.device.displayName);
     this.valveService.setCharacteristic(this.platform.Characteristic.ValveType, this.platform.Characteristic.ValveType.WATER_FAUCET);
 
-    // Active
-    // 1 = Off
-    // 3 = Program selected
-    // 4 = Waiting to start
-    // 5 = In use
-    // 6 = 
-    // 7 = Finished
-    // 9 = Cancelled
-    const activeCharacteristic = new MieleActiveCharacteristic(this.platform, this.valveService, [1], null,
+    const activeCharacteristic = new MieleActiveCharacteristic(this.platform, this.valveService, [MieleState.Off], null,
       accessory.context.device.uniqueId, disableStopAction);
-    const inUseCharacteristic = new MieleInUseCharacteristic(this.platform, this.valveService, null, [5]);
+    const inUseCharacteristic = new MieleInUseCharacteristic(this.platform, this.valveService, null, [MieleState.InUse]);
     const remainingDurationCharacteristic = new MieleRemainingDurationharacteristic(this.platform, this.valveService);
     this.characteristics.push(activeCharacteristic);
     this.characteristics.push(inUseCharacteristic);
@@ -63,3 +52,5 @@ export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessor
   }
   
 }
+
+

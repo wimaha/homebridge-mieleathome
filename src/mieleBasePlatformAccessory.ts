@@ -3,11 +3,21 @@
 
 import { PlatformAccessory, CharacteristicGetCallback } from 'homebridge';
 
+import { BASE_URL, CACHE_RETIREMENT_TIME_MS } from './settings';
 import { MieleAtHomePlatform } from './platform';
 import { IMieleCharacteristic } from './mieleCharacteristics';
 
 import axios from 'axios';
 
+
+export enum MieleState {
+  Off = 1,
+  ProgramSelected = 3,
+  WaitingToStart = 4,
+  InUse = 5,
+  Finished = 7,
+  Cancelled = 9,
+}
 
 //-------------------------------------------------------------------------------------------------
 // Interface Miele status response
@@ -23,13 +33,10 @@ export interface MieleStatusResponse {
 //-------------------------------------------------------------------------------------------------
 export abstract class MieleBasePlatformAccessory {
   private requestStateConfig: {headers: Record<string, unknown>};
-  private stateUrl = this.platform.baseURL + '/' + this.accessory.context.device.uniqueId + '/state';
+  private stateUrl = BASE_URL + '/' + this.accessory.context.device.uniqueId + '/state';
   private lastCacheUpdateTime = 0;
   private cacheUpdateQueued = false;
   protected characteristics: IMieleCharacteristic[] = [];
-
-  // Readonly constants
-  protected readonly CACHE_RETIREMENT_TIME_MS = 1000;
 
   //-------------------------------------------------------------------------------------------------
   constructor(
@@ -60,7 +67,7 @@ export abstract class MieleBasePlatformAccessory {
 
   //-------------------------------------------------------------------------------------------------
   protected isCacheRetired(): boolean {
-    const retired = (this.lastCacheUpdateTime < Date.now() - this.CACHE_RETIREMENT_TIME_MS) &&
+    const retired = (this.lastCacheUpdateTime < Date.now() - CACHE_RETIREMENT_TIME_MS) &&
        !this.cacheUpdateQueued;
 
     if (retired) {
