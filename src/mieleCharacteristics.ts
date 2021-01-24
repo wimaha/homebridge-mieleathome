@@ -55,21 +55,21 @@ abstract class MieleBinaryStateCharacteristic implements IMieleCharacteristic {
 
   //-------------------------------------------------------------------------------------------------
   update(response: MieleStatusResponse): void {
-    
-    if(this.inactiveStates===null && this.activeStates===null) {
-      throw new Error('Only supply valid inactive or active states, not both.');
-    }
 
-    if(this.inactiveStates && this.inactiveStates.includes(response.status.value_raw)) {
-      this.state = this.offState;
+    if (this.inactiveStates) {
+      if(this.inactiveStates.includes(response.status.value_raw)) {
+        this.state = this.offState;
+      } else {
+        this.state = this.onState;
+      }
+    } else if (this.activeStates) {
+      if(this.activeStates.includes(response.status.value_raw)) {
+        this.state = this.onState;
+      } else {
+        this.state = this.offState;
+      }
     } else {
-      this.state = this.onState;
-    }
-
-    if(this.activeStates && this.activeStates.includes(response.status.value_raw)) {
-      this.state = this.onState;
-    } else {
-      this.state = this.offState;
+      throw new Error('Neither active or inactive states supplied. Cannot determine state.');
     }
     
     this.platform.log.debug(`Parsed ${this.characteristicType.name} from API response: ${this.state}`);
