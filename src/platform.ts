@@ -64,7 +64,7 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
   // This function is invoked when homebridge restores cached accessories from disk at startup.
   // It should be used to setup event handlers for characteristics and update respective values.
   configureAccessory(accessory: PlatformAccessory) {
-    this.log.info('Loading accessory from cache:', accessory.displayName);
+    this.log.info('Loading accessory data from cache:', accessory.displayName);
 
     // Add the restored accessory to the accessories cache so we can track if it has already been registered
     this.accessories.push(accessory);
@@ -112,7 +112,7 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
 
         if (existingAccessory) {
           // The accessory already exists
-          this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
+          this.log.info('Re-creating existing accessory with data from cache:', existingAccessory.displayName);
 
           const accessoryObj = this.constructPlatformAccessory(device.ident.type.value_raw, existingAccessory);
 

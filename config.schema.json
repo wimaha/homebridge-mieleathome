@@ -1,5 +1,5 @@
 {
-  "pluginAlias": "MieleAtHome",
+  "pluginAlias": "Miele@home",
   "pluginType": "platform",
   "singular": true,
   "customUi": true,
@@ -26,13 +26,13 @@
         "default": ""
       },
       "token": {
-        "title": "Token",
+        "title": "Initial token",
         "type": "string",
         "required": true,
         "default": ""
       },
-      "refereshToken": {
-        "title": "Refresh token",
+      "refreshToken": {
+        "title": "Initial refresh token",
         "type": "string",
         "required": true,
         "default": ""

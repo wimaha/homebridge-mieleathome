@@ -2,7 +2,7 @@
 // Copyright (c) 2021, Sander van Woensel
 
 // This is the name of the platform that users will use to register the plugin in the Homebridge config.json
-export const PLATFORM_NAME = 'Miele@Home';
+export const PLATFORM_NAME = 'Miele@home';
 
 // This must match the name of your plugin as defined the package.json
 export const PLUGIN_NAME = 'homebridge-mieleathome';
@@ -24,7 +24,8 @@ export const CACHE_RETIREMENT_TIME_MS = 1000;
 export const REVERT_ACTIVATE_REQUEST_TIMEOUT_MS = 500;
 
 // Item name used to store the API token on persistent storage.
-export const TOKEN_STORAGE_NAME = PLATFORM_NAME+'.Token.json'
+export const TOKEN_STORAGE_NAME = PLATFORM_NAME+'.Token.json';
 
 // Interval at which the token is checked for a possible required refresh.
-export const TOKEN_REFRESH_CHECK_INTERVAL_S = 5;
+// Miele tokens are valid for 30 days, checking once every 10min should be sufficient.
+export const TOKEN_REFRESH_CHECK_INTERVAL_S = 600;

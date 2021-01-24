@@ -7,6 +7,7 @@ import { TOKEN_STORAGE_NAME, TOKEN_REFRESH_CHECK_INTERVAL_S, REFRESH_TOKEN_URL }
 import { MieleAtHomePlatform } from './platform';
 import NodePersist from 'node-persist';
 import axios from 'axios';
+import { URLSearchParams } from 'url';
 
 
 //-------------------------------------------------------------------------------------------------
@@ -32,8 +33,6 @@ export class Token {
       private platform: MieleAtHomePlatform,
       private tokenData: ITokenData,
   ) {
-    this.platform.log.debug('Creating new Token object');
-
     setInterval(() => {
       if(this.isNearlyExpired()) {
         this.refreshToken();
@@ -45,43 +44,46 @@ export class Token {
   //-------------------------------------------------------------------------------------------------
   private async refreshToken() {
     // Check required parameters.
-    if(!this.platform.config.clientSecret || !this.platform.config.clienID) {
+    if(!this.platform.config.clientSecret || !this.platform.config.clientID) {
       this.platform.log.warn('Configuration parameters "clientID" or "clientSecret" is left empty. '+
         'Token will not be auto refreshed and will expire soon. Configure these settings or manually refresh the token.');
       return;
     }
 
     if(!this.tokenData.refresh_token) {
-      this.platform.log.warn('No valid refresh token known. Token will not be auto refreshed and will expire soon.');
+      this.platform.log.warn('No valid refresh token known. Token will not be auto refreshed'+
+        ' and will expire soon.');
       return;
     }
 
-    const params = {
-      client_id: this.platform.config.clienID,
-      client_secret: this.platform.config.clientSecret,
-      refresh_token: this.tokenData.refresh_token,
-      grant_type: Token.GRANT_TYPE,
-    };
+    // Post parameters.
+    const params = new URLSearchParams();
+    params.append('client_id', <string>this.platform.config.clientID);
+    params.append('client_secret', <string>this.platform.config.clientSecret);
+    params.append('refresh_token', this.tokenData.refresh_token);
+    params.append('grant_type', Token.GRANT_TYPE);
 
     const config = {
-      'headers': { 
+      headers: { 
         'Authorization': this.getToken(),
-        'Content-Type': 'application/x-www-form-urlencode',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json;charset=utf-8',
       },
     };
 
     try {
       this.platform.log.info('Refreshing token...');
       const response = await axios.post(REFRESH_TOKEN_URL, params, config);
-      this.platform.log.debug(`Token refresh response: ${response}`);
+      this.platform.log.debug(`Token refresh response: ${JSON.stringify(response)}`);
       this.tokenData = response.data;
       this.tokenData.creation_date = new Date();
       
       NodePersist.setItem(TOKEN_STORAGE_NAME, this.tokenData);
+      this.platform.log.info('Token succesfully refreshed and saved in persistent storage.');
     } catch(response) {
       if(response.config && response.response) {
         this.platform.log.error(`Miele API request ${response.config.url} failed with status ${response.response.status}: `+
-                                `"${response.response.statusText}".`);
+                                `"${response.response.statusText}"`);
       } else {
         this.platform.log.error(response);
       }
@@ -98,8 +100,9 @@ export class Token {
     const currentDate = new Date();
     currentDate.setSeconds(currentDate.getSeconds() - TOKEN_REFRESH_CHECK_INTERVAL_S);
 
-    this.platform.log.debug(`Current date: ${currentDate} >= Expired Date ${expiredDate}`);
-    return currentDate >= expiredDate;
+    const expired = currentDate >= expiredDate;
+    this.platform.log.debug(`Current: ${currentDate} >= Expires ${expiredDate} = ${expired}.`);
+    return expired;
   }
 
   //-------------------------------------------------------------------------------------------------
@@ -114,10 +117,12 @@ export class Token {
       await NodePersist.init({'dir': platform.api.user.persistPath()});
 
       let tokenData = await NodePersist.getItem(TOKEN_STORAGE_NAME);
-      if(tokenData) {
-        platform.log.debug('Token exists on disk.');
+      platform.log.debug('tokenData: '+JSON.stringify(tokenData));
+
+      if(tokenData && tokenData.access_token && tokenData.refresh_token ) {
+        platform.log.debug('Token loaded from disk.');
       } else {
-        platform.log.debug('No persistent token stored. Creating new from configuration.');
+        platform.log.info('No *valid* token present in persistent storage. Creating new from configuration.');
         // TODO: Temporary:
         // No token in persistent storage, get it from the configuration.
         // This is temporary until we create a setup to retrieve the token and store it to disk.

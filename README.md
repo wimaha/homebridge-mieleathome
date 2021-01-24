@@ -20,13 +20,19 @@ _This plugin is in its infancy,_ but functional and actively updated.
 - Miele Washing machine (e.g. WCG370).
 - Miele Dishwasher.
 
+## Breaking changes
+### Versions later than v1.2.0
+- `platform` name in your `config.json` should now be "Miele@home" instead of "MieleAtHome". If not you will receive: "_Error: The requested platform 'MieleAtHome' was not registered by any plugin._"
+- `clientID`, `clientSecret` and `refreshToken` are now mandatory configuration parameters. If not supplied the plugin will continue to 
+  function, but will lack the ability to auto refresh your token.
+
 ## Getting started
 
 ### Method 1: Command line / efficient
 1. Create a [Miele@mobile](http://www.miele.com) account if you do not already have one.
-2. Autheticate this plugin via the following link where you have replaced the client ID with the client ID you obtained when requesting the Miele developer account. `https://api.mcs3.miele.com/thirdparty/login?client_id=`_your client id_`&response_type=code&redirect_uri=http://www.example.com:8592&state=1`
-3. After succesfull authorization, the browser will redirect you to something like: `http://www.example.com:8592/?code=NL_74f14379695a6019bdf8d6bccb9f702c&state=1`. Copy only the code after `code=`.
-4. In a terminal execute: `curl -X POST -d client_id=`_your client id_` -d grant_type=authorization_code -d redirect_uri=http://cerebros.local:8592 -d vg=nl-NL -d client_secret=`_your secret_` -d code=`_copied code from previous step_` https://api.mcs3.miele.com/thirdparty/token`
+2. Autheticate this plugin via the following link where you have replaced the client ID with the client ID you obtained when requesting the Miele developer account. `https://api.mcs3.miele.com/thirdparty/login?client_id=`_your client id_`&response_type=code&redirect_uri=http://localhost:8592&state=1`
+3. After succesfull authorization, the browser will redirect you to something like: `http://localhost:8592/?code=NL_74f14379695a6019bdf8d6bccb9f702c&state=1`. Copy only the code after `code=`. Please wait until the browser times out not being able to reach the address.
+4. In a terminal execute: `curl -X POST -d client_id=`_your client id_` -d grant_type=authorization_code -d redirect_uri=http://localhost:8592 -d vg=nl-NL -d client_secret=`_your secret_` -d code=`_copied code from previous step_` https://api.mcs3.miele.com/thirdparty/token`
 5. Your token will be returned by the authorization server. This token can be stored in the plugin configuration.
 
 ### Method 2: Browser only / easy but more time consuming
