@@ -3,7 +3,7 @@
 
 import { Service, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback } from 'homebridge';
 
-import { BASE_URL, REVERT_ACTIVATE_REQUEST_TIMEOUT_MS } from './settings';
+import { DEVICES_INFO_URL, REVERT_ACTIVATE_REQUEST_TIMEOUT_MS } from './settings';
 import { MieleAtHomePlatform } from './platform';
 import { MieleStatusResponse, MieleState } from './mieleBasePlatformAccessory';
 import axios from 'axios';
@@ -103,7 +103,7 @@ export class MieleActiveCharacteristic extends MieleBinaryStateCharacteristic {
   private readonly actionsURL: string;
   private readonly requestConfig = {
     'headers': { 
-      'Authorization': this.platform.token,
+      'Authorization': this.platform.token?.getToken(),
       'Content-Type': 'application/json',
     },
   };
@@ -120,7 +120,7 @@ export class MieleActiveCharacteristic extends MieleBinaryStateCharacteristic {
       platform.Characteristic.Active.INACTIVE,
       platform.Characteristic.Active.ACTIVE);
 
-    this.actionsURL = BASE_URL + '/' + serialNumber + '/actions';
+    this.actionsURL = DEVICES_INFO_URL + '/' + serialNumber + '/actions';
   }
 
   //-------------------------------------------------------------------------------------------------

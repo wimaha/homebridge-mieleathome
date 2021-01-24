@@ -3,7 +3,7 @@
 
 import { PlatformAccessory, CharacteristicGetCallback } from 'homebridge';
 
-import { BASE_URL, CACHE_RETIREMENT_TIME_MS } from './settings';
+import { DEVICES_INFO_URL, CACHE_RETIREMENT_TIME_MS } from './settings';
 import { MieleAtHomePlatform } from './platform';
 import { IMieleCharacteristic } from './mieleCharacteristics';
 
@@ -33,7 +33,7 @@ export interface MieleStatusResponse {
 //-------------------------------------------------------------------------------------------------
 export abstract class MieleBasePlatformAccessory {
   private requestStateConfig: {headers: Record<string, unknown>};
-  private stateUrl = BASE_URL + '/' + this.accessory.context.device.uniqueId + '/state';
+  private stateUrl = DEVICES_INFO_URL + '/' + this.accessory.context.device.uniqueId + '/state';
   private lastCacheUpdateTime = 0;
   private cacheUpdateQueued = false;
   protected characteristics: IMieleCharacteristic[] = [];
@@ -53,7 +53,7 @@ export abstract class MieleBasePlatformAccessory {
 
     this.requestStateConfig = {
       'headers': { 
-        'Authorization': this.platform.token,
+        'Authorization': this.platform.token?.getToken(),
         'Content-Type': 'application/json',
       },
     };

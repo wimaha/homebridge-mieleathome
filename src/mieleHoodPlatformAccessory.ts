@@ -1,6 +1,6 @@
 import { Service, PlatformAccessory, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback } from 'homebridge';
 
-import { BASE_URL } from './settings';
+import { DEVICES_INFO_URL } from './settings';
 import { MieleAtHomePlatform } from './platform';
 
 import request from 'request';
@@ -36,7 +36,7 @@ export class MieleHoodPlatformAccessory {
       .setCharacteristic(this.platform.Characteristic.Model, accessory.context.device.modelNumber)
       .setCharacteristic(this.platform.Characteristic.SerialNumber, accessory.context.device.uniqueId);
 
-    this.url = BASE_URL + '/' + accessory.context.device.modelNumber;
+    this.url = DEVICES_INFO_URL + '/' + accessory.context.device.modelNumber;
 
     this.platform.log.debug('URL ->', this.url);
 
@@ -93,7 +93,7 @@ export class MieleHoodPlatformAccessory {
       'method': 'PUT',
       'url': this.url + '/actions',
       'headers': { 
-        'Authorization': this.platform.token,
+        'Authorization': this.platform.token?.getToken(),
         'Content-Type': 'application/json',
       },
       body: httpdata,
@@ -124,7 +124,7 @@ export class MieleHoodPlatformAccessory {
       'method': 'PUT',
       'url': this.url + '/actions',
       'headers': { 
-        'Authorization': this.platform.token,
+        'Authorization': this.platform.token?.getToken(),
         'Content-Type': 'application/json',
       },
       body: httpdata,
@@ -161,7 +161,7 @@ export class MieleHoodPlatformAccessory {
       'method': 'PUT',
       'url': this.url + '/actions',
       'headers': { 
-        'Authorization': this.platform.token,
+        'Authorization': this.platform.token?.getToken(),
         'Content-Type': 'application/json',
       },
       body: httpdata,
@@ -200,7 +200,7 @@ export class MieleHoodPlatformAccessory {
       'method': 'GET',
       'url': this.url + '/state',
       'headers': { 
-        'Authorization': this.platform.token,
+        'Authorization': this.platform.token?.getToken(),
         'Content-Type': 'application/json',
       },
     };

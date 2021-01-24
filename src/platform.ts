@@ -3,9 +3,10 @@
 
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 
-import { PLATFORM_NAME, PLUGIN_NAME, BASE_URL } from './settings';
+import { PLATFORM_NAME, PLUGIN_NAME, DEVICES_INFO_URL} from './settings';
 import { MieleHoodPlatformAccessory } from './mieleHoodPlatformAccessory';
 import { MieleWasherDryerPlatformAccessory } from './mieleWasherDryerPlatformAccessory';
+import { Token } from './token';
 
 import axios from 'axios';
 
@@ -19,7 +20,7 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
   // This is used to track restored cached accessories
   public readonly accessories: PlatformAccessory[] = [];
 
-  public readonly token = 'Bearer ' + this.config.token;
+  public token: Token | null = null;
   public readonly pollInterval: number = parseInt(<string>this.config.pollInterval);
   public readonly language = this.config.language || '';
   public readonly disableStopActionFor: string[] = <string[]>this.config.disableStopActionFor || [];
@@ -39,6 +40,12 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
   ) {
     this.log.debug('Finished initializing platform:', this.config.name);
 
+    // Verify configuration
+    this.verifyConfig('clientID');
+    this.verifyConfig('clientSecret');
+    this.verifyConfig('refreshToken'); // TODO: Temporarily until we have a proper setup.
+
+
     // When this event is fired it means Homebridge has restored all cached accessories from disk.
     // Dynamic Platform plugins should only register new accessories after this event was fired,
     // in order to ensure they weren't added to homebridge already. This event can also be used
@@ -46,16 +53,10 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
     this.api.on('didFinishLaunching', () => {
       log.debug('Executed didFinishLaunching callback');
 
-      // Construct Token from disk.
-      // Check if token is expired by checking token creation date + "expires_in" < now
-      // If not on disk, create on disk from config
-      // if expired: Token.refresh (replaces token on disk)
-
-      if (!this.token || this.token==='') {
-        this.log.error('No token defined.');
-      } else {
+      Token.construct(this).then((token) => {
+        this.token = token;
         this.discoverDevices();
-      }
+      });
     });
   }
 
@@ -75,13 +76,13 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
 
     const config = {
       'headers': { 
-        'Authorization': this.token,
+        'Authorization': this.token?.getToken(),
         'Content-Type': 'application/json',
       },
     };
 
     try {
-      const url = BASE_URL+'?language='+this.language;
+      const url = DEVICES_INFO_URL+'?language='+this.language;
       this.log.debug(`Requesting devices: "${url}"`);
       const response = await axios.get(url, config);
       
@@ -177,5 +178,15 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
         return null;
       
     }
+  }
+
+  //-----------------------------------------------------------------------------------------------
+  // Verify crucial configuration parameters.
+  private verifyConfig(configParameterStr: string) {
+    if(!this.config[configParameterStr]) {
+      this.log.error(`Configuration parameter "${configParameterStr}" invalid. Will attempt to continue, `+
+        'but please complete the plug-in configuration.');
+    }
+    
   }
 }
