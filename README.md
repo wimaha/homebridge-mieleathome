@@ -20,6 +20,11 @@ _This plugin is in its infancy,_ but functional and actively updated.
 - Miele Washing machine (e.g. WCG370).
 - Miele Dishwasher.
 
+## Features
+- Automatic token refreshing.
+- Start / stop (dish) washhing machine program (with option to disable to prevent unintentional program stop).
+- Remaining run time of last hour.
+
 ## Breaking changes
 ### Versions > v1.2.0
 - `platform` name in your `config.json` should now be "Miele@home" instead of "MieleAtHome". If not you will receive: "_Error: The requested platform 'MieleAtHome' was not registered by any plugin._"
@@ -33,7 +38,7 @@ _This plugin is in its infancy,_ but functional and actively updated.
 2. Autheticate this plugin via the following link where you have replaced the client ID with the client ID you obtained when requesting the Miele developer account. `https://api.mcs3.miele.com/thirdparty/login?client_id=`_your client id_`&response_type=code&redirect_uri=http://localhost:8592&state=1`
 3. After succesfull authorization, the browser will redirect you to something like: `http://localhost:8592/?code=NL_74f14379695a6019bdf8d6bccb9f702c&state=1`. Copy only the code after `code=`. Please wait until the browser times out not being able to reach the address.
 4. In a terminal execute: `curl -X POST -d client_id=`_your client id_` -d grant_type=authorization_code -d redirect_uri=http://localhost:8592 -d vg=nl-NL -d client_secret=`_your secret_` -d code=`_copied code from previous step_` https://api.mcs3.miele.com/thirdparty/token`
-5. Your token will be returned by the authorization server. This token can be stored in the plugin configuration.
+5. Your token and refresh token will be returned by the authorization server. This token and refresh token can be stored in the plugin configuration.
 
 ### Method 2: Browser only: no refresh token
 1. Create a [Miele@mobile](http://www.miele.com) account if you do not already have one.
@@ -54,9 +59,10 @@ Washer Dryer / Washer / Dishwasher:
   machine. Flipping the switch when not allowed will revert the switch state when it is not allowed.
 
 ## Planned features
-- Automatic token retrieval and _refreshing_ using user provided ClientID and ClientSecret.
+- Automatic token retrieval using user provided ClientID and ClientSecret.
 - Optionally enable (current) temperature sensor of washing machine like devices.
 - Add support for fridges, ovens and hob highlights.
+- Set active = false, inUse=true to signal HOmekit to display "Stopping" state when washing machine is finished or cancelled.
 
 ## Thanks
 - [MichelRabozee](https://github.com/MichelRabozee)

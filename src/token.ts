@@ -1,11 +1,9 @@
 // Apacche License
 // Copyright (c) 2021, Sander van Woensel
 
-import 'node-persist';
-
 import { TOKEN_STORAGE_NAME, TOKEN_REFRESH_CHECK_INTERVAL_S, REFRESH_TOKEN_URL } from './settings';
 import { MieleAtHomePlatform } from './platform';
-import NodePersist from 'node-persist';
+import nodePersist from 'node-persist';
 import axios from 'axios';
 import { URLSearchParams } from 'url';
 
@@ -74,11 +72,11 @@ export class Token {
     try {
       this.platform.log.info('Refreshing token...');
       const response = await axios.post(REFRESH_TOKEN_URL, params, config);
-      this.platform.log.debug(`Token refresh response: ${JSON.stringify(response)}`);
+      this.platform.log.debug(`Token refresh response: ${JSON.stringify(response.data)}`);
       this.tokenData = response.data;
       this.tokenData.creation_date = new Date();
       
-      NodePersist.setItem(TOKEN_STORAGE_NAME, this.tokenData);
+      nodePersist.setItem(TOKEN_STORAGE_NAME, this.tokenData);
       this.platform.log.info('Token succesfully refreshed and saved in persistent storage.');
     } catch(response) {
       if(response.config && response.response) {
@@ -114,9 +112,11 @@ export class Token {
   static async construct(platform: MieleAtHomePlatform) : Promise<Token> {
     if(!Token.instance) {      
       // Attempt to load token from disk.
-      await NodePersist.init({'dir': platform.api.user.persistPath()});
+      //await NodePersist.init({'dir': platform.api.user.persistPath()});
+      nodePersist.initSync({'dir': platform.api.user.persistPath()});
 
-      let tokenData = await NodePersist.getItem(TOKEN_STORAGE_NAME);
+      //let tokenData = await NodePersist.getItem(TOKEN_STORAGE_NAME);
+      let tokenData = nodePersist.getItem(TOKEN_STORAGE_NAME);
       platform.log.debug('tokenData: '+JSON.stringify(tokenData));
 
       if(tokenData && tokenData.access_token && tokenData.refresh_token ) {
@@ -133,7 +133,7 @@ export class Token {
           creation_date: new Date(), // This is the best we can do as we do not know when it was really created.
         };
 
-        NodePersist.setItem(TOKEN_STORAGE_NAME, tokenData);
+        nodePersist.setItem(TOKEN_STORAGE_NAME, tokenData);
       }
       
       return new Token(platform, tokenData);
