@@ -63,7 +63,7 @@ export class Token {
 
     const config = {
       headers: { 
-        'Authorization': this.getToken(),
+        'Authorization': this.getAccessToken(),
         'Content-Type': 'application/x-www-form-urlencoded',
         'Accept': 'application/json;charset=utf-8',
       },
@@ -85,6 +85,8 @@ export class Token {
       } else {
         this.platform.log.error(response);
       }
+
+      // TODO: invalidate any existing token and remove it from disk.
     }
 
   }
@@ -96,7 +98,7 @@ export class Token {
 
     // One refresh check interval before real expiration.
     const currentDate = new Date();
-    currentDate.setSeconds(currentDate.getSeconds() - TOKEN_REFRESH_CHECK_INTERVAL_S);
+    currentDate.setSeconds(currentDate.getSeconds() - (10* TOKEN_REFRESH_CHECK_INTERVAL_S));
 
     const expired = currentDate >= expiredDate;
     this.platform.log.debug(`Current: ${currentDate} >= Expires ${expiredDate} = ${expired}.`);
@@ -104,7 +106,7 @@ export class Token {
   }
 
   //-------------------------------------------------------------------------------------------------
-  public getToken() : string {
+  public getAccessToken() : string {
     return 'Bearer '+this.tokenData.access_token;
   }
 
@@ -120,10 +122,10 @@ export class Token {
       platform.log.debug('tokenData: '+JSON.stringify(tokenData));
 
       if(tokenData && tokenData.access_token && tokenData.refresh_token ) {
-        platform.log.debug('Token loaded from disk.');
+        platform.log.info('Token loaded from persistent storage.');
       } else {
         platform.log.info('No *valid* token present in persistent storage. Creating new from configuration.');
-        // TODO: Temporary:
+        // Temporary until this plugin has a proper setup:
         // No token in persistent storage, get it from the configuration.
         // This is temporary until we create a setup to retrieve the token and store it to disk.
         tokenData = {

@@ -101,12 +101,6 @@ export class MieleInUseCharacteristic extends MieleBinaryStateCharacteristic {
 export class MieleActiveCharacteristic extends MieleBinaryStateCharacteristic {      
   
   private readonly actionsURL: string;
-  private readonly requestConfig = {
-    'headers': { 
-      'Authorization': this.platform.token?.getToken(),
-      'Content-Type': 'application/json',
-    },
-  };
 
   constructor(
     platform: MieleAtHomePlatform,
@@ -138,7 +132,7 @@ export class MieleActiveCharacteristic extends MieleBinaryStateCharacteristic {
 
     try {
       // Retrieve allowed actions for this device in the current state.
-      const response = await axios.get(this.actionsURL, this.requestConfig);
+      const response = await axios.get(this.actionsURL, this.platform.getHttpRequestConfig());
       this.platform.log.debug(`${this.serialNumber}: Allowed process actions: ${response.data.processAction} `);
 
       let mieleProcesAction = MieleProcessAction.Stop;
@@ -149,7 +143,7 @@ export class MieleActiveCharacteristic extends MieleBinaryStateCharacteristic {
       // If allowed to execute action.
       if(response.data.processAction.includes(mieleProcesAction)) {
         this.platform.log.info(`${this.serialNumber}: Process action "${MieleProcessAction[mieleProcesAction]}" (${mieleProcesAction}).`);
-        const response = await axios.put(this.actionsURL, {processAction: mieleProcesAction}, this.requestConfig);
+        const response = await axios.put(this.actionsURL, {processAction: mieleProcesAction}, this.platform.getHttpRequestConfig());
         this.platform.log.debug(`Process action response code: ${response.status}: "${response.statusText}"`);
       } else {
         // Requested action not allowed

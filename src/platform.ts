@@ -74,17 +74,10 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
   // Discover devices from Miele web API and construct supproted devices.
   private async discoverDevices() {
 
-    const config = {
-      'headers': { 
-        'Authorization': this.token?.getToken(),
-        'Content-Type': 'application/json',
-      },
-    };
-
     try {
       const url = DEVICES_INFO_URL+'?language='+this.language;
       this.log.debug(`Requesting devices: "${url}"`);
-      const response = await axios.get(url, config);
+      const response = await axios.get(url, this.getHttpRequestConfig());
       
       const allDeviceIds = Object.keys(response.data);
       this.log.debug('Discovered devices: ', allDeviceIds);
@@ -189,4 +182,16 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
     }
     
   }
+
+  //-----------------------------------------------------------------------------------------------
+  // Verify crucial configuration parameters.
+  public getHttpRequestConfig(): {headers: Record<string, unknown>} {
+    return {
+      'headers': { 
+        'Authorization': this.token?.getAccessToken(),
+        'Content-Type': 'application/json',
+      },
+    };
+  }
+
 }

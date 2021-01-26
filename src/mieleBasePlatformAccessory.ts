@@ -32,7 +32,6 @@ export interface MieleStatusResponse {
 // Class Base Miele Accessory
 //-------------------------------------------------------------------------------------------------
 export abstract class MieleBasePlatformAccessory {
-  private requestStateConfig: {headers: Record<string, unknown>};
   private stateUrl = DEVICES_INFO_URL + '/' + this.accessory.context.device.uniqueId + '/state';
   private lastCacheUpdateTime = 0;
   private cacheUpdateQueued = false;
@@ -50,13 +49,6 @@ export abstract class MieleBasePlatformAccessory {
       .setCharacteristic(this.platform.Characteristic.Model, accessory.context.device.modelNumber)
       .setCharacteristic(this.platform.Characteristic.FirmwareRevision, accessory.context.device.firmwareRevision)
       .setCharacteristic(this.platform.Characteristic.SerialNumber, accessory.context.device.uniqueId);
-
-    this.requestStateConfig = {
-      'headers': { 
-        'Authorization': this.platform.token?.getToken(),
-        'Content-Type': 'application/json',
-      },
-    };
 
     // Start polling
     if(this.platform.pollInterval > 0) {
@@ -90,7 +82,7 @@ export abstract class MieleBasePlatformAccessory {
     this.platform.log.debug(`Update called. Requesting: ${this.stateUrl}`);
     this.cacheUpdateQueued = true;
 
-    axios.get(this.stateUrl, this.requestStateConfig).then( (response) => {
+    axios.get(this.stateUrl, this.platform.getHttpRequestConfig()).then( (response) => {
       for(const characteristic of this.characteristics) {
         characteristic.update(response.data);
       }

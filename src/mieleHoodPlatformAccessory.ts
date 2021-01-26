@@ -93,7 +93,7 @@ export class MieleHoodPlatformAccessory {
       'method': 'PUT',
       'url': this.url + '/actions',
       'headers': { 
-        'Authorization': this.platform.token?.getToken(),
+        'Authorization': this.platform.token?.getAccessToken(),
         'Content-Type': 'application/json',
       },
       body: httpdata,
@@ -124,7 +124,7 @@ export class MieleHoodPlatformAccessory {
       'method': 'PUT',
       'url': this.url + '/actions',
       'headers': { 
-        'Authorization': this.platform.token?.getToken(),
+        'Authorization': this.platform.token?.getAccessToken(),
         'Content-Type': 'application/json',
       },
       body: httpdata,
@@ -161,7 +161,7 @@ export class MieleHoodPlatformAccessory {
       'method': 'PUT',
       'url': this.url + '/actions',
       'headers': { 
-        'Authorization': this.platform.token?.getToken(),
+        'Authorization': this.platform.token?.getAccessToken(),
         'Content-Type': 'application/json',
       },
       body: httpdata,
@@ -200,7 +200,7 @@ export class MieleHoodPlatformAccessory {
       'method': 'GET',
       'url': this.url + '/state',
       'headers': { 
-        'Authorization': this.platform.token?.getToken(),
+        'Authorization': this.platform.token?.getAccessToken(),
         'Content-Type': 'application/json',
       },
     };
