@@ -58,6 +58,9 @@ Washer Dryer / Washer / Dishwasher:
 - A HomeKit valve can be turned on and off, however Miele's 3rd party Web API does not always allow you to turn on or off the washing 
   machine. Flipping the switch when not allowed will revert the switch state when it is not allowed.
 
+## Further reading
+- [Wiki](./wiki/)
+
 ## Planned features
 - Automatic token retrieval using user provided ClientID and ClientSecret.
 - Optionally enable (current) temperature sensor of washing machine like devices.

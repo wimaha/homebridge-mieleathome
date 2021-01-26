@@ -86,7 +86,6 @@ export class Token {
         this.platform.log.error(response);
       }
 
-      // TODO: invalidate any existing token and remove it from disk.
     }
 
   }
@@ -96,9 +95,12 @@ export class Token {
     const expiredDate = new Date(this.tokenData.creation_date);
     expiredDate.setSeconds(expiredDate.getSeconds() + this.tokenData.expires_in);
 
-    // One refresh check interval before real expiration.
+    // One refresh check interval before real expiration to provide some margin
+    // for the actual refresh.
+    // expiredDate = 12:00; currentDate = 11:50; TOKEN_REFRESH_CHECK_INTERVAL = 00:10
+    // currentDate = 11:50 + 00:10 = 12:00 => expired!
     const currentDate = new Date();
-    currentDate.setSeconds(currentDate.getSeconds() - (10* TOKEN_REFRESH_CHECK_INTERVAL_S));
+    currentDate.setSeconds(currentDate.getSeconds() + TOKEN_REFRESH_CHECK_INTERVAL_S);
 
     const expired = currentDate >= expiredDate;
     this.platform.log.debug(`Current: ${currentDate} >= Expires ${expiredDate} = ${expired}.`);

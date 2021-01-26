@@ -27,5 +27,5 @@ export const REVERT_ACTIVATE_REQUEST_TIMEOUT_MS = 500;
 export const TOKEN_STORAGE_NAME = PLATFORM_NAME+'.Token.json';
 
 // Interval at which the token is checked for a possible required refresh.
-// Miele tokens are valid for 30 days, checking once every 10min should be sufficient.
-export const TOKEN_REFRESH_CHECK_INTERVAL_S = 600;
+// Miele tokens are valid for 30 days, checking once every 30min should be sufficient.
+export const TOKEN_REFRESH_CHECK_INTERVAL_S = 60*30;
