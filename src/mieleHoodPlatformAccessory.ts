@@ -36,7 +36,7 @@ export class MieleHoodPlatformAccessory {
       .setCharacteristic(this.platform.Characteristic.Model, accessory.context.device.modelNumber)
       .setCharacteristic(this.platform.Characteristic.SerialNumber, accessory.context.device.uniqueId);
 
-    this.url = DEVICES_INFO_URL + '/' + accessory.context.device.modelNumber;
+    this.url = DEVICES_INFO_URL + '/' + accessory.context.device.uniqueId;
 
     this.platform.log.debug('URL ->', this.url);
 
