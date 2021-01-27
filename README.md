@@ -27,7 +27,7 @@ _This plugin is in its infancy,_ but functional and actively updated.
 
 ## Breaking changes
 ### Versions > v1.2.0
-- `platform` name in your `config.json` should now be "Miele@home" instead of "MieleAtHome". If not you will receive: "_Error: The requested platform 'MieleAtHome' was not registered by any plugin._"
+- `platform` name in your `config.json` should now be "Miele@home" instead of "MieleAtHome". If not you will receive: "_Error: The requested platform 'MieleAtHome' was not registered by any plugin._". PLease mind the capitalization.
 - `clientID`, `clientSecret` and `refreshToken` are now mandatory configuration parameters. If not supplied the plugin will continue to 
   function, but will lack the ability to auto refresh your token.
 

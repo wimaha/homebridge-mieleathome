@@ -2,7 +2,7 @@
   "pluginAlias": "Miele@home",
   "pluginType": "platform",
   "singular": true,
-  "customUi": true,
+  "customUi": false,
   "schema": {
     "type": "object",
     "properties": {
@@ -10,7 +10,7 @@
         "title": "Name",
         "type": "string",
         "required": true,
-        "default": "",
+        "default": "Miele@home",
         "description": "Plugin name as displayed in the Homebridge log."
       },
       "clientID": {

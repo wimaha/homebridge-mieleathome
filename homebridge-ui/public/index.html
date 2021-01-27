@@ -37,16 +37,29 @@
   
   <script>
     (async () => {
+      
+      // TODO: when no config exists, the showConfigForm doesn't display anything...
       // Get the initial config - this is an array potentially containing multiple config blocks
       const pluginConfig = await homebridge.getPluginConfig();
+      await homebridge.updatePluginConfig(pluginConfig);
+
+      console.log("pluginConfig: "+JSON.stringify(pluginConfig));
+
+      const schema = await homebridge.getPluginConfigSchema();
+
+      homebridge.createForm(schema, pluginConfig);
+
+
   
       // Get the intial from the config and add it to the form
       //if (!pluginConfig.length) {
       //  document.getElementById('setupRequired').style.display = 'block';
       //} else {
-        homebridge.showSchemaForm();
+      //  homebridge.showSchemaForm();
       //}
   
+
+/*
       // Step 1 submit handler.
       document.getElementById('step1Submit').addEventListener('click', async () => {
         const clientId = document.getElementById('clientIdInput').value;
@@ -80,7 +93,7 @@
 
         document.getElementById('step1Submit').removeAttribute('disabled');
       });
-
+*/
 
 
 
