@@ -65,7 +65,6 @@ Washer Dryer / Washer / Dishwasher:
 - Automatic token retrieval using user provided ClientID and ClientSecret.
 - Optionally enable (current) temperature sensor of washing machine like devices.
 - Add support for fridges, ovens and hob highlights.
-- Set active = false, inUse=true to signal HOmekit to display "Stopping" state when washing machine is finished or cancelled.
 
 ## Thanks
 - [MichelRabozee](https://github.com/MichelRabozee)
