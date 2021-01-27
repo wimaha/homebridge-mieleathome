@@ -29,9 +29,11 @@ export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessor
     this.valveService.setCharacteristic(this.platform.Characteristic.Name, accessory.context.device.displayName);
     this.valveService.setCharacteristic(this.platform.Characteristic.ValveType, this.platform.Characteristic.ValveType.WATER_FAUCET);
 
-    const activeCharacteristic = new MieleActiveCharacteristic(this.platform, this.valveService, [MieleState.Off], null,
+    const activeCharacteristic = new MieleActiveCharacteristic(this.platform, this.valveService,
+      [MieleState.Off, MieleState.Finished, MieleState.Cancelled], null,
       accessory.context.device.uniqueId, disableStopAction);
-    const inUseCharacteristic = new MieleInUseCharacteristic(this.platform, this.valveService, null, [MieleState.InUse]);
+    const inUseCharacteristic = new MieleInUseCharacteristic(this.platform, this.valveService,
+      null, [MieleState.InUse, MieleState.Finished, MieleState.Cancelled]);
     const remainingDurationCharacteristic = new MieleRemainingDurationharacteristic(this.platform, this.valveService);
     this.characteristics.push(activeCharacteristic);
     this.characteristics.push(inUseCharacteristic);
