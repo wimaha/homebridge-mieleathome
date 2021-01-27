@@ -53,14 +53,13 @@
         "required": false,
         "minimum": 0,
         "default": 60,
-        "description": "The number of seconds between update retrievals or 0 to disable."
+        "description": "The number of seconds between state retrievals or 0 to disable auto-update."
       },
       "disableStopActionFor": {
-        "title": "Disable stop action for",
+        "title": "Disable stop request ability for",
         "type": "array",
         "uniqueItems": true,
         "items": {
-          "title": "Disable stop action for",
           "type": "string",
           "enum": [
             "Washing Machines",
@@ -96,7 +95,7 @@
       "type": "fieldset",
       "expandable": true,
       "title": "Advanced",
-      "description": "Non-default customizations.",
+      "description": "",
       "items": [
         "disableStopActionFor"
       ]

@@ -22,10 +22,10 @@ class PluginUiServer extends HomebridgePluginUiServer {
       res.end("Reply");
     };
 
-    const server = http.createServer(requestListener);
-    server.listen(port, host, () => {
-      console.log(`Server running on http://${host}:${port}`);
-    });
+    //const server = http.createServer(requestListener);
+    //server.listen(port, host, () => {
+    //  console.log(`Server running on http://${host}:${port}`);
+    //});
 
   }
 

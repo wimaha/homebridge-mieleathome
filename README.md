@@ -59,12 +59,12 @@ Washer Dryer / Washer / Dishwasher:
   machine. Flipping the switch when not allowed will revert the switch state when it is not allowed.
 
 ## Further reading
-- [Wiki](./wiki/)
+- [Wiki](../../wiki/)
 
 ## Planned features
 - Automatic token retrieval using user provided ClientID and ClientSecret.
 - Optionally enable (current) temperature sensor of washing machine like devices.
-- Add support for fridges, ovens and hob highlights.
+- Add support for fridges, ovens and hobs.
 
 ## Thanks
 - [MichelRabozee](https://github.com/MichelRabozee)
