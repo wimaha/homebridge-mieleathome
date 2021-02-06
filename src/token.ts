@@ -1,4 +1,4 @@
-// Apacche License
+// Apache License
 // Copyright (c) 2021, Sander van Woensel
 
 import { TOKEN_STORAGE_NAME, TOKEN_REFRESH_CHECK_INTERVAL_S, REFRESH_TOKEN_URL } from './settings';
@@ -49,8 +49,8 @@ export class Token {
     }
 
     if(!this.tokenData.refresh_token) {
-      this.platform.log.warn('No valid refresh token known. Token will not be auto refreshed'+
-        ' and will expire soon.');
+      this.platform.log.warn('No valid refresh token known. Token will not be auto refreshed '+
+        'and will expire soon.');
       return;
     }
 
@@ -126,10 +126,19 @@ export class Token {
       if(tokenData && tokenData.access_token && tokenData.refresh_token ) {
         platform.log.info('Token loaded from persistent storage.');
       } else {
-        platform.log.info('No *valid* token present in persistent storage. Creating new from configuration.');
-        // Temporary until this plugin has a proper setup:
-        // No token in persistent storage, get it from the configuration.
-        // This is temporary until we create a setup to retrieve the token and store it to disk.
+        if(!platform.config.token) {
+          platform.log.error('No *valid* token present in persistent storage. '+
+            'Nor is there a "token" configured in the configuration. '+
+            'Please re-setup this plugin.');
+        }
+        else {
+          platform.log.error('No *valid* token present in persistent storage. '+
+            'Will attempt to use the token from the configuration as a last resort. '+
+            'Please re-setup this plugin.');
+        }
+
+        // Attempt to use token from configuration as last resort.
+        // If one of the fields is invalid, this will be detected later.
         tokenData = {
           access_token: platform.config.token,
           refresh_token: platform.config.refreshToken,

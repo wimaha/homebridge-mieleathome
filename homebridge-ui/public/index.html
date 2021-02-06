@@ -1,143 +1,188 @@
-<!-- Miele@homebridge custom setup UI.
-  -- Work in progress. Currently automated setup is disabled. -->
+<!--
+Miele@homebridge custom setup UI.
+Apacche License
+Copyright (c) 2021, Sander van Woensel
+-->
 
-<img src="./miele-homebridge.png"/>
+<img src="./miele-homebridge.png" style="margin-bottom: 20px;"/>
 
 <!-- Setup required. -->
 <div id="setupRequired" style="display:none;" class="card card-body">
+    <h3>Setup</h3>
     <form id="step1">
     <div class="form-group">
-        <label for="clientIdInput">Client ID</label>
-        <input type="text" class="form-control" id="clientIdInput" required>
+      <label for="clientIdInput">Client ID</label>
+      <input type="text" class="form-control" id="clientIdInput" required>
     </div>
     <div class="form-group">
-        <label for="clientSecretInput">Client Secret</label>
-        <input type="text" class="form-control" id="clientSecretInput" required>
+      <label for="clientSecretInput">Client Secret</label>
+      <input type="text" class="form-control" id="clientSecretInput" required>
+    </div>
+    <div class="form-group">
+      <label for="serverPortInput">Authorization grant server port (only change in case of conflicts)</label>
+      <input type="text" class="form-control" id="serverPortInput" required value="8582">
     </div>
     <div class="text-center">
-        <button id="step1Submit" type="button" class="btn btn-primary">Next</button>
-    </div>
-    </form>
-
-    <form id="step2" style="display:none;">
-    <div class="form-group">
-        <label for="clientIdInput">Client ID</label>
-        <input type="text" class="form-control" id="clientIdInput" required>
-    </div>
-    <div class="form-group">
-        <label for="clientSecretInput">Client Secret</label>
-        <input type="text" class="form-control" id="clientSecretInput" required>
-    </div>
-    <div class="text-center">
-        <button id="step2Submit" type="button" class="btn btn-primary">Next</button>
+      <a href="" target="_blank" id="loginAnchor"><button type="button" id="loginButton" class="btn btn-primary" disabled>Next</button></a>
     </div>
     </form>
 </div>
 
   
   <script>
-    (async () => {
+    // Server raised a state change during the token retrieval process.
+    async function tokenStatusChanged(event) {
+      console.log('New token status received: '+JSON.stringify(event.data)); 
+
+      switch(event.data) {
+        case 'authorization_grant_received': {
+          homebridge.toast.info('Token authorization grant succesfully received.', 'Authorization grant received');
+          break;
+        }
+        case 'token_received': {
+          homebridge.toast.info('Token succesfully received.', 'Token received');
+          break;
+        }
+        case 'token_stored': {
+          homebridge.toast.info('Token sucesfully retrieved and stored.', 'Token stored');
+
+          document.getElementById('setupRequired').style.display = 'none';
+          homebridge.showSchemaForm();
+          homebridge.hideSpinner();
+          break;
+        }
+      }
+    }
+
+    // Server raised an error during the token retrieval process.
+    async function tokenRetrievalError(event) {
+      console.log('Token retrieval error: '+JSON.stringify(event.data)); 
+      homebridge.toast.error(event.data.message, event.data.title);
+      inputChanged();
+      homebridge.hideSpinner();
+    }
+
+    // Update acnchor link to reflect the now known link.
+    async function constructAuthorizationRequestLink(clientId, clientSecret, serverPort) {
+      // Start server to receive authorization grant from Miele.
+      const state = await homebridge.request('/initialize_server',
+        {port: serverPort,
+         clientId: clientId,
+         clientSecret: clientSecret,
+        });
       
-      // TODO: when no config exists, the showConfigForm doesn't display anything...
+      const host = window.location.host.replace(/:[0-9]+/, ':'+serverPort);
+      const redirectUrl = `${window.location.protocol}//${host}/auth_grant`;
+      console.log('Redirect URL set to: '+redirectUrl);
+
+      const requestUrl = `https://api.mcs3.miele.com/thirdparty/login?client_id=${clientId}&response_type=code&redirect_uri=${redirectUrl}&state=${state}`;
+
+      // Set URL for login button.
+      document.getElementById('loginAnchor').href = requestUrl;
+    }
+
+    // Validate form input to enable "Next" button.
+    async function inputChanged() {
+      const clientId = document.getElementById('clientIdInput').value;
+      const clientSecret = document.getElementById('clientSecretInput').value;
+      const serverPort = document.getElementById('serverPortInput').value;
+      const loginButton = document.getElementById('loginButton');
+
+      if(clientId && clientSecret && serverPort) {
+        loginButton.removeAttribute('disabled');
+      }
+      else {
+        loginButton.setAttribute('disabled', 'disabled')
+      }
+
+    }
+
+    (async () => {
+      homebridge.hideSpinner(); // When page gets auto reloaded due to long inactivity start with a hidden spinner.
+
       // Get the initial config - this is an array potentially containing multiple config blocks
-      const pluginConfig = await homebridge.getPluginConfig();
-      await homebridge.updatePluginConfig(pluginConfig);
+      let pluginConfig = await homebridge.getPluginConfig();
 
-      console.log("pluginConfig: "+JSON.stringify(pluginConfig));
+      // Determine if a config is stored on disk, if not, start setup.
+      const tokenStoredOnDisk = await homebridge.request('/is_token_stored', {});
 
-      const schema = await homebridge.getPluginConfigSchema();
+      if (!pluginConfig.length) {
+        pluginConfig = [{}];
+        await homebridge.updatePluginConfig(pluginConfig);
+      }
 
-      homebridge.createForm(schema, pluginConfig);
+      if(!tokenStoredOnDisk) {
+        document.getElementById('setupRequired').style.display = 'block';
 
+        // Subscribe to token status changes.
+        homebridge.addEventListener('token-status-changed', this.tokenStatusChanged);
+        homebridge.addEventListener('error', this.tokenRetrievalError);
 
+        // Update any possibly existing clientId / Secret:
+        document.getElementById('clientIdInput').value = pluginConfig[0].clientID || '';
+        document.getElementById('clientSecretInput').value = pluginConfig[0].clientSecret || '';
+
+      } else {
+        homebridge.showSchemaForm();
+      }
+
+      // Always fire input changed to disable/enable button.
+      inputChanged();
   
-      // Get the intial from the config and add it to the form
-      //if (!pluginConfig.length) {
-      //  document.getElementById('setupRequired').style.display = 'block';
-      //} else {
-      //  homebridge.showSchemaForm();
-      //}
-  
+      document.getElementById('clientIdInput').addEventListener('input', async (event) => {
+        inputChanged();
+      });
 
-/*
-      // Step 1 submit handler.
-      document.getElementById('step1Submit').addEventListener('click', async () => {
+      document.getElementById('clientSecretInput').addEventListener('input', async (event) => {
+        inputChanged();
+      });
+
+      document.getElementById('serverPortInput').addEventListener('input', async (event) => {
+        inputChanged();
+      });
+
+      // About to login, prepare anchor link
+      document.getElementById('loginAnchor').addEventListener('mouseenter', async () => {
+        homebridge.showSpinner();
+
         const clientId = document.getElementById('clientIdInput').value;
         const clientSecret = document.getElementById('clientSecretInput').value;
-
-        // Validate preconditions.
-        if (!clientId) {
-            homebridge.toast.error('Please enter a valid Client ID as obtained from Miele.', 'Error');
-            return;
-        }
-
-        if (!clientSecret) {
-            homebridge.toast.error('Please enter a valid Client Secret as obtained from Miele.', 'Error');
-            return;
-        }
-
-        document.getElementById('step1Submit').setAttribute('disabled', 'disabled');
+        const serverPort = document.getElementById('serverPortInput').value;
 
         try {
-            homebridge.showSpinner()
-            //const response = `https://api.mcs3.miele.com/thirdparty/login?client_id=${clientId}&response_type=code&redirect_uri=http://localhost:8000&state=1`);
+          // Validate preconditions.
+          if (!clientId) {
+              throw new Error('Please enter a valid Client ID as obtained from Miele.');
+          }
 
-            await homebridge.request('/token', { username: "sander" });
-            homebridge.hideSpinner()
-            // document.getElementById('step1').style.display = 'none';
-            // document.getElementById('step2').style.display = 'block';
-        } catch (e) {
-            homebridge.hideSpinner()
-            homebridge.toast.error(e.message, 'Error');
+          if (!clientSecret) {
+              throw new Error('Please enter a valid Client Secret as obtained from Miele.');
+          }
+
+          // Update configuration with client ID and client secret.
+          pluginConfig[0].clientID = clientId;
+          pluginConfig[0].clientSecret = clientSecret;
+          await homebridge.updatePluginConfig(pluginConfig);
+
+          await this.constructAuthorizationRequestLink(clientId, clientSecret, serverPort);
+
+        } catch(err) {
+          homebridge.toast.error(err.message, 'Error');
+          inputChanged();
         }
-
-        document.getElementById('step1Submit').removeAttribute('disabled');
-      });
-*/
-
-
-
-
-
-
-/*
-      // watch for click events on the getTokenButton
-      document.querySelector('#getTokenButton').addEventListener('click', async () => {
-        // validate a username was provided
-        const username = document.querySelector('#userNameInput').value;
-  
-        if (!username) {
-          // create a error / red toast notification if the required input is not provided.
-          homebridge.toast.error('A username must be provided.', 'Error');
-          return;
-        }
-  
-        // starting the request, show the loading spinner
-        homebridge.showSpinner();
-  
-        // request a token from the server
-        try {
-          const response = await homebridge.request('/token', {
-            username: username,
-          });
-  
-          // update the token input with the response
-          document.querySelector('#tokenInput').value = response.token;
-  
-          // update the plugin config
-          pluginConfig[0].token = response.token;
-          homebridge.updatePluginConfig(pluginConfig);
-  
-          // show a success toast notification
-          homebridge.toast.success('Got Token!', 'Success');
-        } catch (e) {
-          homebridge.toast.error(e.error, e.message);
-        } finally {
-          // remember to un-hide the spinner
+        finally {
           homebridge.hideSpinner();
         }
-      });*/
+
+
+      });
+
+      // Logging in, show spinner.
+      document.getElementById('loginButton').addEventListener('click', async () => {
+        homebridge.showSpinner();
+      });
+
   
     })();
-  
+
   </script>

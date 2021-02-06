@@ -43,7 +43,6 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
     // Verify configuration
     this.verifyConfig('clientID');
     this.verifyConfig('clientSecret');
-    this.verifyConfig('refreshToken'); // TODO: Temporarily until we have a proper setup.
 
 
     // When this event is fired it means Homebridge has restored all cached accessories from disk.

@@ -2,7 +2,7 @@
   "pluginAlias": "Miele@home",
   "pluginType": "platform",
   "singular": true,
-  "customUi": false,
+  "customUi": true,
   "schema": {
     "type": "object",
     "properties": {
@@ -21,18 +21,6 @@
       },
       "clientSecret": {
         "title": "Client Secret",
-        "type": "string",
-        "required": true,
-        "default": ""
-      },
-      "token": {
-        "title": "Initial token",
-        "type": "string",
-        "required": true,
-        "default": ""
-      },
-      "refreshToken": {
-        "title": "Initial refresh token",
         "type": "string",
         "required": true,
         "default": ""
@@ -77,9 +65,7 @@
       "title": "Authorization",
       "items": [
         "clientID",
-        "clientSecret",
-        "token",
-        "refreshToken"
+        "clientSecret"
       ]
     },
     {
