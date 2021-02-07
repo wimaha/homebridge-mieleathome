@@ -4,7 +4,7 @@
 import { Service, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback } from 'homebridge';
 
 import { DEVICES_INFO_URL, REVERT_ACTIVATE_REQUEST_TIMEOUT_MS } from './settings';
-import { MieleAtHomePlatform } from './platform';
+import { MieleAtHomePlatform, createErrorString } from './platform';
 import { MieleStatusResponse, MieleState } from './mieleBasePlatformAccessory';
 import axios from 'axios';
 
@@ -155,12 +155,7 @@ export class MieleActiveCharacteristic extends MieleBinaryStateCharacteristic {
         this.undoSetState(value);
       }      
     } catch (response) {
-      if(response.config && response.response) {
-        this.platform.log.error(`Miele API request ${response.config.url} failed with status ${response.response.status}: `+
-                                `"${response.response.statusText}".`);
-      } else {
-        this.platform.log.error(response);
-      }
+      this.platform.log.error( createErrorString(response) );
     }
   }
 

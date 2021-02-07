@@ -10,6 +10,22 @@ import { Token } from './token';
 
 import axios from 'axios';
 
+
+export function createErrorString(err) : string {
+  let errStr = '';
+  if(err.config) {
+    errStr += `Miele API request ${err.config.url} failed`;
+  }
+  if(err.response) {
+    errStr += ` with status ${err.response.status}: "${err.response.statusText}"`;
+  }
+  errStr += '. ';
+  if(err.code && err.syscall) {
+    errStr += `Error: ${err.syscall} ${err.code}`;
+  }
+  return errStr;
+}
+
 //-------------------------------------------------------------------------------------------------
 // Class MieleAtHomePlatform
 //-------------------------------------------------------------------------------------------------

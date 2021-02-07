@@ -4,7 +4,7 @@
 import { PlatformAccessory, CharacteristicGetCallback } from 'homebridge';
 
 import { DEVICES_INFO_URL, CACHE_RETIREMENT_TIME_MS } from './settings';
-import { MieleAtHomePlatform } from './platform';
+import { MieleAtHomePlatform, createErrorString } from './platform';
 import { IMieleCharacteristic } from './mieleCharacteristics';
 
 import axios from 'axios';
@@ -89,13 +89,9 @@ export abstract class MieleBasePlatformAccessory {
       
       this.lastCacheUpdateTime = Date.now();
       this.cacheUpdateQueued = false;
+      
     }).catch(response => {
-      if(response.config && response.response) {
-        this.platform.log.error(`Miele API request ${response.config.url} failed with status ${response.response.status}: `+
-                                `"${response.response.statusText}".`);
-      } else {
-        this.platform.log.error(response);
-      }
+      this.platform.log.error( createErrorString(response) );
     });
   }
 
