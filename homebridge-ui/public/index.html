@@ -4,7 +4,12 @@ Apacche License
 Copyright (c) 2021, Sander van Woensel
 -->
 
-<img src="./miele-homebridge.png" style="margin-bottom: 20px;"/>
+<div>
+  <img src="./miele-homebridge.png" style="margin-bottom: 20px;"/>
+</div>
+<div id="toolbar">
+  <button type="button" id="setupButton" class="btn btn-secondary">Show Setup ...</button>
+</div>
 
 <!-- Setup required. -->
 <div id="setupRequired" style="display:none;" class="card card-body">
@@ -48,6 +53,7 @@ Copyright (c) 2021, Sander van Woensel
 
           document.getElementById('setupRequired').style.display = 'none';
           homebridge.showSchemaForm();
+          document.getElementById('toolbar').style.display = 'block'; // Show toolbar again.
           homebridge.hideSpinner();
           break;
         }
@@ -97,6 +103,23 @@ Copyright (c) 2021, Sander van Woensel
 
     }
 
+    // Show setup
+    async function showSetup(pluginConfig) {
+      document.getElementById('setupRequired').style.display = 'block';
+      document.getElementById('toolbar').style.display = 'none'; // Hide toolbar.
+
+      // Subscribe to token status changes.
+      homebridge.addEventListener('token-status-changed', this.tokenStatusChanged);
+      homebridge.addEventListener('error', this.tokenRetrievalError);
+
+      // Update any possibly existing clientId / Secret:
+      document.getElementById('clientIdInput').value = pluginConfig[0].clientID || '';
+      document.getElementById('clientSecretInput').value = pluginConfig[0].clientSecret || '';
+
+      // Always fire input changed to disable/enable button.
+      inputChanged();
+    }
+
     (async () => {
       homebridge.hideSpinner(); // When page gets auto reloaded due to long inactivity start with a hidden spinner.
 
@@ -112,22 +135,10 @@ Copyright (c) 2021, Sander van Woensel
       }
 
       if(!tokenStoredOnDisk) {
-        document.getElementById('setupRequired').style.display = 'block';
-
-        // Subscribe to token status changes.
-        homebridge.addEventListener('token-status-changed', this.tokenStatusChanged);
-        homebridge.addEventListener('error', this.tokenRetrievalError);
-
-        // Update any possibly existing clientId / Secret:
-        document.getElementById('clientIdInput').value = pluginConfig[0].clientID || '';
-        document.getElementById('clientSecretInput').value = pluginConfig[0].clientSecret || '';
-
+        showSetup(pluginConfig);
       } else {
         homebridge.showSchemaForm();
       }
-
-      // Always fire input changed to disable/enable button.
-      inputChanged();
   
       document.getElementById('clientIdInput').addEventListener('input', async (event) => {
         inputChanged();
@@ -171,7 +182,7 @@ Copyright (c) 2021, Sander van Woensel
           inputChanged();
         }
         finally {
-          homebridge.hideSpinner();
+          homebridge.hideSpinner(); 
         }
 
 
@@ -180,6 +191,12 @@ Copyright (c) 2021, Sander van Woensel
       // Logging in, show spinner.
       document.getElementById('loginButton').addEventListener('click', async () => {
         homebridge.showSpinner();
+      });
+
+      // Logging in, show spinner.
+      document.getElementById('setupButton').addEventListener('click', async () => {
+        homebridge.hideSchemaForm();
+        showSetup(pluginConfig);
       });
 
   

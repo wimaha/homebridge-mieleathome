@@ -27,6 +27,10 @@ _This plugin is in its infancy,_ but functional and actively updated.
 - Remaining run time of last hour.
 
 ## Breaking changes
+### Versions >= 2.2.0
+- Due to guided setup, `refreshToken` and `token` are no longer visible in the configuration UI. However if all fails,
+  the plugin will still attempt to use these configuration settings as a last resort when they are configured in the `config.json`.
+
 ### Versions > v1.2.0
 - `platform` name in your `config.json` should now be "Miele@home" instead of "MieleAtHome". If not you will receive: "_Error: The requested platform 'MieleAtHome' was not registered by any plugin._". Please mind the letter casing.
 - `clientID`, `clientSecret` and `refreshToken` are now mandatory configuration parameters. If not supplied the plugin will continue to 

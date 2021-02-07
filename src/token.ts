@@ -130,8 +130,7 @@ export class Token {
           platform.log.error('No *valid* token present in persistent storage. '+
             'Nor is there a "token" configured in the configuration. '+
             'Please re-setup this plugin.');
-        }
-        else {
+        } else {
           platform.log.error('No *valid* token present in persistent storage. '+
             'Will attempt to use the token from the configuration as a last resort. '+
             'Please re-setup this plugin.');
