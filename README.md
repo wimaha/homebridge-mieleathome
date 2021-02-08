@@ -17,7 +17,8 @@ _This plugin is in its infancy,_ but functional and actively updated.
 ## Supported Devices
 - Miele Ventilation Hood (credits: [talsalis](https://github.com/talsalis/homebridge-miele-hood)).
 - Miele Washer Dryer Combination (e.g. WTZH730). 
-- Miele Washing machine (e.g. WCG370).
+- Miele Washing machine (e.g. WCG370, WMV960).
+- Miele Dryer (e.g. TMV840WP)
 - Miele Dishwasher.
 
 ## Features

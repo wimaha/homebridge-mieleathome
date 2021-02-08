@@ -43,6 +43,7 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
 
   // Readonly constants
   public readonly WASHER_ID = 1;
+  public readonly DRYER_ID = 2;
   public readonly DISHWASHER_ID = 7;
   public readonly HOOD_RAW_ID = 18;
   public readonly WASHER_DRYER_ID = 24;
@@ -176,6 +177,7 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
 
       case this.WASHER_DRYER_ID:
       case this.WASHER_ID:
+      case this.DRYER_ID:
         return new MieleWasherDryerPlatformAccessory(this, accessory, 
           this.disableStopActionFor.includes('Washing Machines'));
       case this.DISHWASHER_ID: 
