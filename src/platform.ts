@@ -40,6 +40,8 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
   public readonly pollInterval: number = parseInt(<string>this.config.pollInterval);
   public readonly language = this.config.language || '';
   public readonly disableStopActionFor: string[] = <string[]>this.config.disableStopActionFor || [];
+  public readonly disableTempSensorFor: string[] = <string[]>this.config.disableTempSensorFor || [];
+
 
   // Readonly constants
   public readonly WASHER_ID = 1;
@@ -127,8 +129,8 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
 
           if(!accessoryObj) {
             this.log.error('Retrieved accessory from cache, but its raw type value is not a supported device. '+
-                          `Device: "${deviceObject.displayName}" `+
-                          `with raw type value: ${device.ident.type.value_raw}.`);
+                           `Device: "${deviceObject.displayName}" `+
+                           `with raw type value: ${device.ident.type.value_raw}.`);
           }
 
         } else {
@@ -177,12 +179,17 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
 
       case this.WASHER_DRYER_ID:
       case this.WASHER_ID:
+        return new MieleWasherDryerPlatformAccessory(this, accessory, 
+          this.disableStopActionFor.includes('Washing Machines'),
+          this.disableTempSensorFor.includes('Washing Machines'));
       case this.DRYER_ID:
         return new MieleWasherDryerPlatformAccessory(this, accessory, 
-          this.disableStopActionFor.includes('Washing Machines'));
+          this.disableStopActionFor.includes('Dryers'),
+          true); // Dryer is estimated to not have a target temp attribute.
       case this.DISHWASHER_ID: 
         return new MieleWasherDryerPlatformAccessory(this, accessory,
-          this.disableStopActionFor.includes('Dishwashers'));
+          this.disableStopActionFor.includes('Dishwashers'),
+          this.disableTempSensorFor.includes('Dishwashers'));
       
       default:
         return null;

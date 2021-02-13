@@ -5,9 +5,8 @@ import { Service, CharacteristicValue, CharacteristicSetCallback, Characteristic
 
 import { DEVICES_INFO_URL, REVERT_ACTIVATE_REQUEST_TIMEOUT_MS } from './settings';
 import { MieleAtHomePlatform, createErrorString } from './platform';
-import { MieleStatusResponse, MieleState } from './mieleBasePlatformAccessory';
+import { MieleStatusResponse, MieleState, MieleStatusResponseTemp } from './mieleBasePlatformAccessory';
 import axios from 'axios';
-
 
 enum MieleProcessAction {
   Stop = 2,
@@ -176,7 +175,7 @@ export class MieleActiveCharacteristic extends MieleBinaryStateCharacteristic {
 //-------------------------------------------------------------------------------------------------
 // Miele Remaining Duration Characteristic
 //-------------------------------------------------------------------------------------------------
-export class MieleRemainingDurationharacteristic implements IMieleCharacteristic {
+export class MieleRemainingDurationCharacteristic implements IMieleCharacteristic {
   protected remainingDuration: number;
       
   constructor(
@@ -204,6 +203,65 @@ export class MieleRemainingDurationharacteristic implements IMieleCharacteristic
     this.remainingDuration = response.remainingTime[0]*3600 + response.remainingTime[1]*60;
     this.platform.log.debug('Parsed RemainingDuration from API response:', this.remainingDuration, '[s]');
     this.service.updateCharacteristic(this.platform.Characteristic.RemainingDuration, this.remainingDuration); 
+  }
+
+}
+
+//-------------------------------------------------------------------------------------------------
+// Miele Temperature Characteristic
+//-------------------------------------------------------------------------------------------------
+export enum TemperatureType {
+  Target,
+  Current
+}
+
+export class MieleTempCharacteristic implements IMieleCharacteristic {
+  protected temp: number;
+  
+  private readonly NULL_VALUE = 2**16/-2;
+
+  constructor(
+    protected platform: MieleAtHomePlatform,
+    protected service: Service,
+    private type: TemperatureType, 
+  ) {
+    this.temp = 0; 
+  }
+
+
+  //-------------------------------------------------------------------------------------------------
+  // These methods always returns the status from cache wich might be outdated, but will be
+  // updated as soon as possible by the update function.
+  get(callback: CharacteristicGetCallback) {
+    callback(null, this.temp);
+  }
+
+  //-------------------------------------------------------------------------------------------------
+  set(_value: CharacteristicValue, _callback: CharacteristicSetCallback): void {
+    this.platform.log.error('Attempt to set temperature characteristic. Ignored.');
+  }
+
+  //-------------------------------------------------------------------------------------------------
+  update(response: MieleStatusResponse): void {
+    let tempArray: MieleStatusResponseTemp[];
+    switch(this.type) {
+      case TemperatureType.Target:
+        tempArray = response.targetTemperature;
+        break;
+      case TemperatureType.Current:
+        tempArray = response.temperature;
+        break;
+    }
+    
+    if(tempArray.length > 0) {
+      const valueRaw = tempArray[0].value_raw; // Fetch first temperature only.
+      this.platform.log.debug(`Parsed first ${TemperatureType[this.type]} Temperature from API response: ${valueRaw} [C/100]`);
+    
+      if(valueRaw !== this.NULL_VALUE) {
+        this.temp = valueRaw / 100.0; // Miele returns values in deci-Celsius
+        this.service.updateCharacteristic(this.platform.Characteristic.CurrentTemperature, this.temp); 
+      }
+    }
   }
 
 }

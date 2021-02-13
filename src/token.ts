@@ -103,7 +103,7 @@ export class Token {
     currentDate.setSeconds(currentDate.getSeconds() + TOKEN_REFRESH_CHECK_INTERVAL_S);
 
     const expired = currentDate >= expiredDate;
-    this.platform.log.debug(`Current: ${currentDate} >= Expires ${expiredDate} = ${expired}.`);
+    this.platform.log.debug(`Current: ${currentDate} >= Expires ${expiredDate}? = ${expired}.`);
     return expired;
   }
 

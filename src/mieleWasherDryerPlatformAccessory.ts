@@ -6,7 +6,8 @@ import { Service, PlatformAccessory } from 'homebridge';
 import { MieleAtHomePlatform } from './platform';
 import { MieleBasePlatformAccessory, MieleState } from './mieleBasePlatformAccessory';
 
-import { MieleActiveCharacteristic, MieleInUseCharacteristic, MieleRemainingDurationharacteristic } 
+import { MieleActiveCharacteristic, MieleInUseCharacteristic, MieleRemainingDurationCharacteristic, MieleTempCharacteristic,
+  TemperatureType } 
   from './mieleCharacteristics';
 
 //-------------------------------------------------------------------------------------------------
@@ -14,12 +15,14 @@ import { MieleActiveCharacteristic, MieleInUseCharacteristic, MieleRemainingDura
 //-------------------------------------------------------------------------------------------------
 export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessory {
   private valveService: Service;
+  private tempService: Service | undefined;
 
   //-----------------------------------------------------------------------------------------------
   constructor(
     platform: MieleAtHomePlatform,
     accessory: PlatformAccessory,
     disableStopAction: boolean,
+    disableTempSensor: boolean,
   ) {
     super(platform, accessory);
 
@@ -34,7 +37,7 @@ export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessor
       accessory.context.device.uniqueId, disableStopAction);
     const inUseCharacteristic = new MieleInUseCharacteristic(this.platform, this.valveService,
       null, [MieleState.InUse, MieleState.Finished, MieleState.Cancelled]);
-    const remainingDurationCharacteristic = new MieleRemainingDurationharacteristic(this.platform, this.valveService);
+    const remainingDurationCharacteristic = new MieleRemainingDurationCharacteristic(this.platform, this.valveService);
     this.characteristics.push(activeCharacteristic);
     this.characteristics.push(inUseCharacteristic);
     this.characteristics.push(remainingDurationCharacteristic);
@@ -50,6 +53,24 @@ export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessor
 
     this.valveService.getCharacteristic(this.platform.Characteristic.RemainingDuration)
       .on('get', this.getGeneric.bind(this, remainingDurationCharacteristic));
+
+    // Temperature sensor service
+    this.tempService = this.accessory.getService(this.platform.Service.TemperatureSensor);
+    if(!disableTempSensor) {
+      this.platform.log.info('... adding temperature sensor.');
+      this.tempService = this.accessory.getService(this.platform.Service.TemperatureSensor) ||
+        this.accessory.addService(this.platform.Service.TemperatureSensor);
+
+      const tempCharacteristic = new MieleTempCharacteristic(this.platform, this.tempService, TemperatureType.Target);
+      this.characteristics.push(tempCharacteristic);
+      this.tempService.getCharacteristic(this.platform.Characteristic.CurrentTemperature)
+        .on('get', this.getGeneric.bind(this, tempCharacteristic));
+
+    } else if(this.tempService) {
+      this.accessory.removeService(this.tempService);
+      this.platform.log.info('... removed temperature sensor.');
+    }
+
 
   }
   

@@ -22,10 +22,16 @@ export enum MieleState {
 //-------------------------------------------------------------------------------------------------
 // Interface Miele status response
 //-------------------------------------------------------------------------------------------------
+export interface MieleStatusResponseTemp {
+  value_raw: number; value_localized: null|string; unit: string;
+}
+
 export interface MieleStatusResponse {
   status: {value_raw: number};
   programPhase: {value_raw: number};
   remainingTime: number[];
+  temperature: MieleStatusResponseTemp[];
+  targetTemperature: MieleStatusResponseTemp[];
 }
 
 //-------------------------------------------------------------------------------------------------

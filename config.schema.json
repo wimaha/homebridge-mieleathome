@@ -51,6 +51,19 @@
           "type": "string",
           "enum": [
             "Washing Machines",
+            "Dryers",
+            "Dishwashers"
+          ]
+        }
+      },
+      "disableTempSensorFor": {
+        "title": "Disable temperature sensor for",
+        "type": "array",
+        "uniqueItems": true,
+        "items": {
+          "type": "string",
+          "enum": [
+            "Washing Machines",
             "Dishwashers"
           ]
         }
@@ -83,7 +96,8 @@
       "title": "Advanced",
       "description": "",
       "items": [
-        "disableStopActionFor"
+        "disableStopActionFor",
+        "disableTempSensorFor"
       ]
     }
   ]
