@@ -14,7 +14,6 @@ import { MieleActiveCharacteristic, MieleInUseCharacteristic, MieleRemainingDura
 // Class Washing Machine and Washer Dryer combination
 //-------------------------------------------------------------------------------------------------
 export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessory {
-  private valveService: Service;
   private tempService: Service | undefined;
 
   //-----------------------------------------------------------------------------------------------
@@ -26,32 +25,33 @@ export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessor
   ) {
     super(platform, accessory);
 
-    this.valveService = this.accessory.getService(this.platform.Service.Valve) || this.accessory.addService(this.platform.Service.Valve);
+    this.mainService = this.accessory.getService(this.platform.Service.Valve) || this.accessory.addService(this.platform.Service.Valve);
 
     // Set the service name, this is what is displayed as the default name on the Home app
-    this.valveService.setCharacteristic(this.platform.Characteristic.Name, accessory.context.device.displayName);
-    this.valveService.setCharacteristic(this.platform.Characteristic.ValveType, this.platform.Characteristic.ValveType.WATER_FAUCET);
+    this.mainService.setCharacteristic(this.platform.Characteristic.Name, accessory.context.device.displayName);
+    this.mainService.setCharacteristic(this.platform.Characteristic.ValveType, this.platform.Characteristic.ValveType.WATER_FAUCET);
 
-    const activeCharacteristic = new MieleActiveCharacteristic(this.platform, this.valveService,
+    const activeCharacteristic = new MieleActiveCharacteristic(this.platform, this.mainService,
       [MieleState.Off, MieleState.Finished, MieleState.Cancelled], null,
       accessory.context.device.uniqueId, disableStopAction);
-    const inUseCharacteristic = new MieleInUseCharacteristic(this.platform, this.valveService,
+    const inUseCharacteristic = new MieleInUseCharacteristic(this.platform, this.mainService,
       null, [MieleState.InUse, MieleState.Finished, MieleState.Cancelled]);
-    const remainingDurationCharacteristic = new MieleRemainingDurationCharacteristic(this.platform, this.valveService);
+    const remainingDurationCharacteristic = new MieleRemainingDurationCharacteristic(this.platform, this.mainService);
+    
     this.characteristics.push(activeCharacteristic);
     this.characteristics.push(inUseCharacteristic);
     this.characteristics.push(remainingDurationCharacteristic);
 
     // Each service must implement at-minimum the "required characteristics" for the given service type
     // see https://developers.homebridge.io/#/service/Valve
-    this.valveService.getCharacteristic(this.platform.Characteristic.Active)
+    this.mainService.getCharacteristic(this.platform.Characteristic.Active)
       .on('get', this.getGeneric.bind(this, activeCharacteristic))
       .on('set', activeCharacteristic.set.bind(activeCharacteristic));
 
-    this.valveService.getCharacteristic(this.platform.Characteristic.InUse)
+    this.mainService.getCharacteristic(this.platform.Characteristic.InUse)
       .on('get', this.getGeneric.bind(this, inUseCharacteristic));
 
-    this.valveService.getCharacteristic(this.platform.Characteristic.RemainingDuration)
+    this.mainService.getCharacteristic(this.platform.Characteristic.RemainingDuration)
       .on('get', this.getGeneric.bind(this, remainingDurationCharacteristic));
 
     // Temperature sensor service

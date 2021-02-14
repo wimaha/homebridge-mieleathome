@@ -1,7 +1,7 @@
 // Apacche License
 // Copyright (c) 2020, Sander van Woensel
 
-import { PlatformAccessory, CharacteristicGetCallback } from 'homebridge';
+import { PlatformAccessory, CharacteristicGetCallback, Service } from 'homebridge';
 
 import { DEVICES_INFO_URL, CACHE_RETIREMENT_TIME_MS } from './settings';
 import { MieleAtHomePlatform, createErrorString } from './platform';
@@ -41,6 +41,7 @@ export abstract class MieleBasePlatformAccessory {
   private stateUrl = DEVICES_INFO_URL + '/' + this.accessory.context.device.uniqueId + '/state';
   private lastCacheUpdateTime = 0;
   private cacheUpdateQueued = false;
+  protected mainService!: Service;
   protected characteristics: IMieleCharacteristic[] = [];
 
   //-------------------------------------------------------------------------------------------------
@@ -95,9 +96,12 @@ export abstract class MieleBasePlatformAccessory {
       
       this.lastCacheUpdateTime = Date.now();
       this.cacheUpdateQueued = false;
+
+      this.mainService.setCharacteristic(this.platform.Characteristic.StatusFault, this.platform.Characteristic.StatusFault.NO_FAULT);
       
     }).catch(response => {
       this.platform.log.error( createErrorString(response) );
+      this.mainService.setCharacteristic(this.platform.Characteristic.StatusFault, this.platform.Characteristic.StatusFault.GENERAL_FAULT);
     });
   }
 

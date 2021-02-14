@@ -22,10 +22,11 @@ _This plugin is in its infancy,_ but functional and actively updated.
 - Miele Dishwasher.
 
 ## Features
-- Easy to setup: guided process to retrieve token via OAuth2 from Miele.
+- Easy setup: guided process to retrieve token via OAuth2 from Miele.
 - Automatic token refreshing.
 - Start / stop (dish) washing machine program (with an option to disable to prevent unintentional program stop requests).
 - Remaining run time of last hour.
+- Washing machine / dish washer program target temperature.
 
 ## Breaking changes
 ### Versions >= 2.2.0
@@ -40,7 +41,7 @@ _This plugin is in its infancy,_ but functional and actively updated.
 ## Limitations
 
 Washer Dryer / Washer / Dishwasher:
-- HomeKit does not support a washer dryer / washing machine or dish washer. It will be emulated as a valve.
+- HomeKit does not support a washer dryer, washing machine, tuble dryer  or dish washer. It will be emulated as a valve.
 - A HomeKit valve has a maximum remaining duration of 3600 seconds. The washing machine's remaining duration will thus only reflect the real
   remaining duration as reported by your Miele device when the duration decreases to a value less than 3600 seconds.
 - A HomeKit valve can be turned on and off, however Miele's 3rd party Web API does not always allow you to turn on or off the washing 
@@ -50,7 +51,6 @@ Washer Dryer / Washer / Dishwasher:
 - [Wiki](../../wiki/)
 
 ## Planned features
-- Optionally enable (current) temperature sensor of washing machine like devices.
 - Add support for fridges, ovens and hobs.
 
 ## Thanks
