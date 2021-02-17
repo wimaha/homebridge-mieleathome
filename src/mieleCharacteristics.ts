@@ -155,6 +155,8 @@ export class MieleActiveCharacteristic extends MieleBinaryStateCharacteristic {
       }      
     } catch (response) {
       this.platform.log.error( createErrorString(response) );
+      this.service.setCharacteristic(this.platform.Characteristic.StatusFault, this.platform.Characteristic.StatusFault.GENERAL_FAULT);
+
     }
   }
 
