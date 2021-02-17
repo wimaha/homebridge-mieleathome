@@ -260,6 +260,9 @@ export class MieleTempCharacteristic implements IMieleCharacteristic {
       if(valueRaw !== this.NULL_VALUE) {
         this.temp = valueRaw / 100.0; // Miele returns values in deci-Celsius
         this.service.updateCharacteristic(this.platform.Characteristic.CurrentTemperature, this.temp); 
+      } else {
+        // Set target temperature to 0 when no target temperature available since device is off.
+        this.service.updateCharacteristic(this.platform.Characteristic.CurrentTemperature, 0);
       }
     }
   }
