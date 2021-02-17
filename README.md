@@ -12,8 +12,6 @@ It (currently) requires a
 + [Miele@mobile](http://www.miele.com) account to obtain a client id and secret, and a;
 + [Miele Developer](http://www.miele.com/developer) account.
 
-_This plugin is in its infancy,_ but functional and actively updated.
-
 ## Supported Devices
 - Miele Ventilation Hood (credits: [talsalis](https://github.com/talsalis/homebridge-miele-hood)).
 - Miele Washer Dryer Combination (e.g. WTZH730). 
@@ -27,6 +25,7 @@ _This plugin is in its infancy,_ but functional and actively updated.
 - Start / stop (dish) washing machine program (with an option to disable to prevent unintentional program stop requests).
 - Remaining run time of last hour.
 - Washing machine / dish washer program target temperature.
+- HomeKit identify support via Homebridge log.
 
 ## Breaking changes
 ### Versions >= 2.2.0

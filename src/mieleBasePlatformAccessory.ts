@@ -1,7 +1,7 @@
 // Apacche License
 // Copyright (c) 2020, Sander van Woensel
 
-import { PlatformAccessory, CharacteristicGetCallback, Service } from 'homebridge';
+import { PlatformAccessory, CharacteristicGetCallback, CharacteristicSetCallback, Service, CharacteristicValue } from 'homebridge';
 
 import { DEVICES_INFO_URL, CACHE_RETIREMENT_TIME_MS } from './settings';
 import { MieleAtHomePlatform, createErrorString } from './platform';
@@ -55,7 +55,9 @@ export abstract class MieleBasePlatformAccessory {
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Miele')
       .setCharacteristic(this.platform.Characteristic.Model, accessory.context.device.modelNumber)
       .setCharacteristic(this.platform.Characteristic.FirmwareRevision, accessory.context.device.firmwareRevision)
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, accessory.context.device.uniqueId);
+      .setCharacteristic(this.platform.Characteristic.SerialNumber, accessory.context.device.uniqueId)
+      .getCharacteristic(this.platform.Characteristic.Identify)
+      .on('set', this.identify.bind(this));
 
     // Start polling
     if(this.platform.pollInterval > 0) {
@@ -81,6 +83,12 @@ export abstract class MieleBasePlatformAccessory {
       this.update();
     }
     return characteristic.get(callback);
+  }
+
+  //-----------------------------------------------------------------------------------------------
+  protected identify(_value: CharacteristicValue, _callback: CharacteristicSetCallback) {
+    this.platform.log.info(`Identify requested for: ${this.accessory.context.device.modelNumber} `+
+      `with serial number: ${this.accessory.context.device.uniqueId}`);
   }
 
   //-----------------------------------------------------------------------------------------------
