@@ -125,6 +125,7 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
         if (existingAccessory) {
           // The accessory already exists
           this.log.info('Re-creating existing accessory with data from cache:', existingAccessory.displayName);
+          existingAccessory.context.device = deviceObject; // Update cache with newest data.
 
           const accessoryObj = this.constructPlatformAccessory(device.ident.type.value_raw, existingAccessory);
 
