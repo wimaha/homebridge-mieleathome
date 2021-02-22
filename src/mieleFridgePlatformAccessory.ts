@@ -30,9 +30,9 @@ export class MieleFridgePlatformAccessory extends MieleBasePlatformAccessory {
 
     const currentCoolingStateCharacteristic = new MieleCurrentCoolingCharacteristic(this.platform, this.mainService,
       null, [MieleState.InUse]);
-    
     const targetCoolingStateCharacterictic = new MieleTargetCoolingCharacteristic(this.platform, this.mainService,
       null, [MieleState.InUse]);
+
     const currentTemperatureCharacteristic = new MieleTempCharacteristic(this.platform, this.mainService, TemperatureType.Current);
     const targetTemperatureCharacteristic = new MieleTempCharacteristic(this.platform, this.mainService, TemperatureType.Target);
     const temperatureUnitCharacteristic = new MieleTemperatureUnitCharacteristic(this.platform, this.mainService);
