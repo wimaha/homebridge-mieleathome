@@ -9,6 +9,7 @@ import { MieleWasherDryerPlatformAccessory } from './mieleWasherDryerPlatformAcc
 import { Token } from './token';
 
 import axios from 'axios';
+//import { MieleFridgePlatformAccessory } from './mieleFridgePlatformAccessory';
 
 
 export function createErrorString(err) : string {
@@ -106,9 +107,9 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
         const device = response.data[deviceId];
         const deviceObject = {
           uniqueId: deviceId,
-          firmwareRevision: device.ident.xkmIdentLabel.releaseVersion,
-          displayName: device.ident.deviceName || device.ident.type.value_localized,
-          modelNumber: device.ident.deviceIdentLabel.techType,
+          firmwareRevision: device.ident.xkmIdentLabel.releaseVersion || 'Unknonw Miele firmware',
+          displayName: device.ident.deviceName || device.ident.type.value_localized || `Unnamed ${deviceId}`,
+          modelNumber: device.ident.deviceIdentLabel.techType || 'Unknown Miele model',
         };
 
         this.log.info(`Discovered device: id: ${deviceObject.uniqueId}, `+
@@ -170,6 +171,10 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
   // Construct accessory
   private constructPlatformAccessory(raw_id: number, accessory: PlatformAccessory) {
 
+    // TODO: Get Platform action properties as required input to construct devices.
+    // Receive initialState.
+
+
     switch (raw_id) {
       case this.HOOD_RAW_ID: {
         // TODO: Change to class deriving from BasePlatformAccessory.
@@ -179,9 +184,11 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
 
       case this.WASHER_DRYER_ID:
       case this.WASHER_ID:
+        //return new MieleFridgePlatformAccessory(this, accessory);
         return new MieleWasherDryerPlatformAccessory(this, accessory, 
           this.disableStopActionFor.includes('Washing Machines'),
           this.disableTempSensorFor.includes('Washing Machines'));
+
       case this.DRYER_ID:
         return new MieleWasherDryerPlatformAccessory(this, accessory, 
           this.disableStopActionFor.includes('Dryers'),
