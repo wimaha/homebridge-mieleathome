@@ -51,6 +51,7 @@ Washer Dryer / Washer / Dishwasher:
 
 ## Planned features
 - Add support for fridges, ovens and hobs.
+- Add Custom characteristic to display current program running.
 
 ## Thanks
 - [MichelRabozee](https://github.com/MichelRabozee)

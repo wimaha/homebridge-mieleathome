@@ -9,8 +9,13 @@ import { MieleStatusResponse, MieleState, MieleStatusResponseTemp } from './miel
 import axios from 'axios';
 
 enum MieleProcessAction {
-  Stop = 2,
   Start = 1,
+  Stop = 2,
+  Pause = 3,
+  StartSuperFreezing = 4,
+  StopSuperFreesing = 5,
+  StartSuperCooling=6,
+  StopSuperCooling=7,
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -78,6 +83,37 @@ abstract class MieleBinaryStateCharacteristic implements IMieleCharacteristic {
 }
 
 //-------------------------------------------------------------------------------------------------
+// Miele Read Only Characteristic
+//-------------------------------------------------------------------------------------------------
+abstract class MieleReadOnlyCharacteristic implements IMieleCharacteristic {
+
+  constructor(
+    protected platform: MieleAtHomePlatform,
+    protected service: Service,
+    protected value,
+  ) {
+  }
+
+  //-------------------------------------------------------------------------------------------------
+  // These methods always returns the status from cache wich might be outdated, but will be
+  // updated as soon as possible by the update function.
+  get(callback: CharacteristicGetCallback) {
+    callback(null, this.value);
+  }
+
+  //-------------------------------------------------------------------------------------------------
+  set(_value: CharacteristicValue, _callback: CharacteristicSetCallback): void {
+    this.platform.log.error('Attempt to set a read only characteristic. Ignored.');
+  }
+
+  //-------------------------------------------------------------------------------------------------
+  update(_response: MieleStatusResponse): void {
+    throw new Error('"update" method must be overridden.');
+  }
+
+}
+
+//-------------------------------------------------------------------------------------------------
 // Miele InUse Characteristic. 
 //-------------------------------------------------------------------------------------------------
 export class MieleInUseCharacteristic extends MieleBinaryStateCharacteristic {
@@ -91,6 +127,40 @@ export class MieleInUseCharacteristic extends MieleBinaryStateCharacteristic {
     super(platform, service, inactiveStates, activeStates, platform.Characteristic.InUse,
       platform.Characteristic.InUse.NOT_IN_USE,
       platform.Characteristic.InUse.IN_USE);
+  }
+}
+
+//-------------------------------------------------------------------------------------------------
+// Miele Current Cooling Characteristic. 
+//-------------------------------------------------------------------------------------------------
+export class MieleCurrentCoolingCharacteristic extends MieleBinaryStateCharacteristic {
+      
+  constructor(
+    platform: MieleAtHomePlatform,
+    service: Service,
+    inactiveStates: MieleState[] | null,
+    activeStates: MieleState[] | null,
+  ) {
+    super(platform, service, inactiveStates, activeStates, platform.Characteristic.CurrentHeatingCoolingState,
+      platform.Characteristic.CurrentHeatingCoolingState.OFF,
+      platform.Characteristic.CurrentHeatingCoolingState.COOL);
+  }
+}
+
+//-------------------------------------------------------------------------------------------------
+// Miele Current Cooling Characteristic. 
+//-------------------------------------------------------------------------------------------------
+export class MieleTargetCoolingCharacteristic extends MieleBinaryStateCharacteristic {
+      
+  constructor(
+    platform: MieleAtHomePlatform,
+    service: Service,
+    inactiveStates: MieleState[] | null,
+    activeStates: MieleState[] | null,
+  ) {
+    super(platform, service, inactiveStates, activeStates, platform.Characteristic.TargetHeatingCoolingState,
+      platform.Characteristic.CurrentHeatingCoolingState.OFF,
+      platform.Characteristic.CurrentHeatingCoolingState.COOL);
   }
 }
 
@@ -177,34 +247,20 @@ export class MieleActiveCharacteristic extends MieleBinaryStateCharacteristic {
 //-------------------------------------------------------------------------------------------------
 // Miele Remaining Duration Characteristic
 //-------------------------------------------------------------------------------------------------
-export class MieleRemainingDurationCharacteristic implements IMieleCharacteristic {
-  protected remainingDuration: number;
+export class MieleRemainingDurationCharacteristic extends MieleReadOnlyCharacteristic {
       
   constructor(
     protected platform: MieleAtHomePlatform,
     protected service: Service,
   ) {
-    this.remainingDuration = 0; 
-  }
-
-
-  //-------------------------------------------------------------------------------------------------
-  // These methods always returns the status from cache wich might be outdated, but will be
-  // updated as soon as possible by the update function.
-  get(callback: CharacteristicGetCallback) {
-    callback(null, this.remainingDuration);
-  }
-
-  //-------------------------------------------------------------------------------------------------
-  set(_value: CharacteristicValue, _callback: CharacteristicSetCallback): void {
-    this.platform.log.error('Attempt to set remaining duration characteristic. Ignored.');
+    super(platform, service, 0);
   }
 
   //-------------------------------------------------------------------------------------------------
   update(response: MieleStatusResponse): void {
-    this.remainingDuration = response.remainingTime[0]*3600 + response.remainingTime[1]*60;
-    this.platform.log.debug('Parsed RemainingDuration from API response:', this.remainingDuration, '[s]');
-    this.service.updateCharacteristic(this.platform.Characteristic.RemainingDuration, this.remainingDuration); 
+    this.value = response.remainingTime[0]*3600 + response.remainingTime[1]*60;
+    this.platform.log.debug('Parsed RemainingDuration from API response:', this.value, '[s]');
+    this.service.updateCharacteristic(this.platform.Characteristic.RemainingDuration, this.value); 
   }
 
 }
@@ -217,30 +273,15 @@ export enum TemperatureType {
   Current
 }
 
-export class MieleTempCharacteristic implements IMieleCharacteristic {
-  protected temp: number;
-  
+export class MieleTempCharacteristic extends MieleReadOnlyCharacteristic {  
   private readonly NULL_VALUE = 2**16/-2;
 
   constructor(
-    protected platform: MieleAtHomePlatform,
-    protected service: Service,
+    platform: MieleAtHomePlatform,
+    service: Service,
     private type: TemperatureType, 
   ) {
-    this.temp = 0; 
-  }
-
-
-  //-------------------------------------------------------------------------------------------------
-  // These methods always returns the status from cache wich might be outdated, but will be
-  // updated as soon as possible by the update function.
-  get(callback: CharacteristicGetCallback) {
-    callback(null, this.temp);
-  }
-
-  //-------------------------------------------------------------------------------------------------
-  set(_value: CharacteristicValue, _callback: CharacteristicSetCallback): void {
-    this.platform.log.error('Attempt to set temperature characteristic. Ignored.');
+    super(platform, service, 0);
   }
 
   //-------------------------------------------------------------------------------------------------
@@ -260,13 +301,37 @@ export class MieleTempCharacteristic implements IMieleCharacteristic {
       this.platform.log.debug(`Parsed first ${TemperatureType[this.type]} Temperature from API response: ${valueRaw} [C/100]`);
     
       if(valueRaw !== this.NULL_VALUE) {
-        this.temp = valueRaw / 100.0; // Miele returns values in deci-Celsius
-        this.service.updateCharacteristic(this.platform.Characteristic.CurrentTemperature, this.temp); 
+        this.value = valueRaw / 100.0; // Miele returns values in deci-Celsius
+        this.service.updateCharacteristic(this.platform.Characteristic.CurrentTemperature, this.value); 
       } else {
         // Set target temperature to 0 when no target temperature available since device is off.
         this.service.updateCharacteristic(this.platform.Characteristic.CurrentTemperature, 0);
       }
     }
+  }
+}
+
+//-------------------------------------------------------------------------------------------------
+// Miele Temperature Unit Characteristic
+//-------------------------------------------------------------------------------------------------
+export class MieleTemperatureUnitCharacteristic extends MieleReadOnlyCharacteristic {
+
+  constructor(
+    platform: MieleAtHomePlatform,
+    service: Service,
+  ) {
+    super(platform, service, platform.Characteristic.TemperatureDisplayUnits.CELSIUS);
+  }
+
+  //-------------------------------------------------------------------------------------------------
+  update(response: MieleStatusResponse): void {
+    if(response.temperature[0].unit === 'Celsius' ) {
+      this.value = this.platform.Characteristic.TemperatureDisplayUnits.CELSIUS;
+    } else {
+      this.value = this.platform.Characteristic.TemperatureDisplayUnits.FAHRENHEIT;
+    }
+    this.platform.log.debug('Parsed Temperature Unit from API response:', this.value);
+    this.service.updateCharacteristic(this.platform.Characteristic.TemperatureDisplayUnits, this.value); 
   }
 
 }
