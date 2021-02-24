@@ -27,6 +27,14 @@ export function createErrorString(err) : string {
   return errStr;
 }
 
+enum MieleDeviceIds {
+  Washer = 1,
+  Dryer = 2,
+  DishWasher = 7,
+  Hood = 18,
+  WasherDryer = 24,
+}
+
 //-------------------------------------------------------------------------------------------------
 // Class MieleAtHomePlatform
 //-------------------------------------------------------------------------------------------------
@@ -42,15 +50,6 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
   public readonly language = this.config.language || '';
   public readonly disableStopActionFor: string[] = <string[]>this.config.disableStopActionFor || [];
   public readonly disableTempSensorFor: string[] = <string[]>this.config.disableTempSensorFor || [];
-
-
-  // Readonly constants
-  public readonly WASHER_ID = 1;
-  public readonly DRYER_ID = 2;
-  public readonly DISHWASHER_ID = 7;
-  public readonly HOOD_RAW_ID = 18;
-  public readonly WASHER_DRYER_ID = 24;
-
 
   //-----------------------------------------------------------------------------------------------
   constructor(
@@ -108,7 +107,8 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
         const deviceObject = {
           uniqueId: deviceId,
           firmwareRevision: device.ident.xkmIdentLabel.releaseVersion || 'Unknonw Miele firmware',
-          displayName: device.ident.deviceName || device.ident.type.value_localized || `Unnamed ${deviceId}`,
+          displayName: device.ident.deviceName || device.ident.type.value_localized || MieleDeviceIds[device.ident.type.value_raw] ||
+            `Unnamed ${deviceId}`,
           modelNumber: device.ident.deviceIdentLabel.techType || 'Unknown Miele model',
         };
 
@@ -177,24 +177,24 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
 
 
     switch (raw_id) {
-      case this.HOOD_RAW_ID: {
+      case MieleDeviceIds.Hood: {
         // TODO: Change to class deriving from BasePlatformAccessory.
         return new MieleHoodPlatformAccessory(this, accessory);
         break;
       }
 
-      case this.WASHER_DRYER_ID:
-      case this.WASHER_ID:
+      case MieleDeviceIds.WasherDryer:
+      case MieleDeviceIds.Washer:
         //return new MieleFridgePlatformAccessory(this, accessory);
         return new MieleWasherDryerPlatformAccessory(this, accessory, 
           this.disableStopActionFor.includes('Washing Machines'),
-          this.disableTempSensorFor.includes('Washing Machines'));
+          this.disableTempSensorFor.includes('Washing Machines')); // TODO: Use enum to string for this instead. Impacts existing configs!
 
-      case this.DRYER_ID:
+      case MieleDeviceIds.Dryer:
         return new MieleWasherDryerPlatformAccessory(this, accessory, 
           this.disableStopActionFor.includes('Dryers'),
           true); // Dryer is estimated to not have a target temp attribute.
-      case this.DISHWASHER_ID: 
+      case MieleDeviceIds.DishWasher: 
         return new MieleWasherDryerPlatformAccessory(this, accessory,
           this.disableStopActionFor.includes('Dishwashers'),
           this.disableTempSensorFor.includes('Dishwashers'));
