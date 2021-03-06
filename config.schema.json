@@ -67,7 +67,6 @@
           "type": "string",
           "enum": [
             "Washer",
-            "Dryer",
             "WasherDryer",
             "Dishwasher"
           ]
