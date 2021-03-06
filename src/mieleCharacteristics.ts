@@ -285,6 +285,7 @@ export class MieleRemainingDurationCharacteristic extends MieleReadOnlyCharacter
     this.platform.log.debug('Parsed RemainingDuration from API response:', this.value, '[s]');
 
     this.value = this.value > this.MAX_HOMEKIT_DURATION_S ? this.MAX_HOMEKIT_DURATION_S : this.value;
+    this.value = this.value < 0 ? 0 : this.value;
 
     this.service.updateCharacteristic(this.platform.Characteristic.RemainingDuration, this.value); 
   }
@@ -339,7 +340,7 @@ export class MieleTempCharacteristic extends MieleReadOnlyCharacteristic {
         this.service.updateCharacteristic(characteristic, this.value); 
       } else {
         // Set target temperature to 0 when no target temperature available since device is off.
-        this.service.updateCharacteristic(characteristic, 0);
+        this.service.updateCharacteristic(characteristic, 1);
       }
     }
   }
