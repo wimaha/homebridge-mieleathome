@@ -310,12 +310,17 @@ export class MieleTempCharacteristic extends MieleReadOnlyCharacteristic {
   //-------------------------------------------------------------------------------------------------
   update(response: MieleStatusResponse): void {
     let tempArray: MieleStatusResponseTemp[];
+    let characteristic;
+
     switch(this.type) {
       case TemperatureType.Target:
         tempArray = response.targetTemperature;
+        characteristic = this.platform.Characteristic.TargetTemperature;
         break;
       case TemperatureType.Current:
         tempArray = response.temperature;
+        characteristic = this.platform.Characteristic.CurrentTemperature;
+
         break;
     }
     
@@ -326,10 +331,10 @@ export class MieleTempCharacteristic extends MieleReadOnlyCharacteristic {
     
       if(valueRaw !== this.NULL_VALUE) {
         this.value = valueRaw / this.TEMP_CONVERSION_FACTOR; // Miele returns values in centi-Celsius
-        this.service.updateCharacteristic(this.platform.Characteristic.CurrentTemperature, this.value); 
+        this.service.updateCharacteristic(characteristic, this.value); 
       } else {
         // Set target temperature to 0 when no target temperature available since device is off.
-        this.service.updateCharacteristic(this.platform.Characteristic.CurrentTemperature, 0);
+        this.service.updateCharacteristic(characteristic, 0);
       }
     }
   }
@@ -365,8 +370,13 @@ export class MieleTargetTempCharacteristic extends MieleTempCharacteristic {
       this.platform.log.debug(`Set target temperature response code: ${response.status}: "${response.statusText}"`);
 
     } catch(response) {
-      this.platform.log.error( createErrorString(response) );
-      this.service.setCharacteristic(this.platform.Characteristic.StatusFault, this.platform.Characteristic.StatusFault.GENERAL_FAULT);
+      if(response.response && response.response.status === 500) {
+        this.platform.log.warn(`Ignoring Miele API fault reply code ${response.response.status}. `+
+          'Device most probably still acknowlegded (known Miele API misbehaviour).');
+      } else {
+        this.platform.log.error( createErrorString(response) );
+        this.service.setCharacteristic(this.platform.Characteristic.StatusFault, this.platform.Characteristic.StatusFault.GENERAL_FAULT);
+      }
     }
   }
 

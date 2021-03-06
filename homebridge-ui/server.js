@@ -5,14 +5,14 @@
 
 // TODO: Source token name and persist path from settings.ts?
 
-const { HomebridgePluginUiServer, RequestError } = require('@homebridge/plugin-ui-utils');
+const { HomebridgePluginUiServer } = require('@homebridge/plugin-ui-utils');
 
 const http = require('http');
 const url = require('url');
 const fs = require('fs');
 const fsp = fs.promises;
 const axios = require('axios');
-const crypto = require("crypto");
+const crypto = require('crypto');
 const tokenStorage = require('node-persist');
 
 const HOST = '0.0.0.0';
