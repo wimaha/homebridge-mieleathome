@@ -270,6 +270,8 @@ export class MieleTargetCoolingCharacteristic extends MieleWritableBinaryStateCh
 //-------------------------------------------------------------------------------------------------
 export class MieleRemainingDurationCharacteristic extends MieleReadOnlyCharacteristic {
       
+  private readonly MAX_HOMEKIT_DURATION_S = 3600;
+
   constructor(
     protected platform: MieleAtHomePlatform,
     protected service: Service,
@@ -281,6 +283,9 @@ export class MieleRemainingDurationCharacteristic extends MieleReadOnlyCharacter
   update(response: MieleStatusResponse): void {
     this.value = response.remainingTime[0]*3600 + response.remainingTime[1]*60;
     this.platform.log.debug('Parsed RemainingDuration from API response:', this.value, '[s]');
+
+    this.value = this.value > this.MAX_HOMEKIT_DURATION_S ? this.MAX_HOMEKIT_DURATION_S : this.value;
+
     this.service.updateCharacteristic(this.platform.Characteristic.RemainingDuration, this.value); 
   }
 

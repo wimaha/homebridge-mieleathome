@@ -59,7 +59,7 @@ Fridge / Fridge Freezer combination:
 - [Wiki](../../wiki/)
 
 ## Planned features
-- Add support for fridges, ovens and hobs.
+- Add support for oven, hob and coffee machine?
 - Add Custom characteristic to display current program running.
 
 ## Thanks
