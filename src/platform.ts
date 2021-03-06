@@ -6,23 +6,24 @@ import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, 
 import { PLATFORM_NAME, PLUGIN_NAME, DEVICES_INFO_URL} from './settings';
 import { MieleHoodPlatformAccessory } from './mieleHoodPlatformAccessory';
 import { MieleWasherDryerPlatformAccessory } from './mieleWasherDryerPlatformAccessory';
+import { MieleFridgePlatformAccessory } from './mieleFridgePlatformAccessory';
 import { Token } from './token';
 
 import axios from 'axios';
-//import { MieleFridgePlatformAccessory } from './mieleFridgePlatformAccessory';
-
 
 export function createErrorString(err) : string {
   let errStr = '';
   if(err.config) {
-    errStr += `Miele API request ${err.config.url} failed`;
+    errStr += `Miele API request ${err.config.url} failed.`;
   }
   if(err.response) {
-    errStr += ` with status ${err.response.status}: "${err.response.statusText}"`;
+    errStr += ` Status ${err.response.status}: "${err.response.statusText}".`;
   }
-  errStr += '. ';
+  
   if(err.code && err.syscall) {
     errStr += `Error: ${err.syscall} ${err.code}`;
+  } else {
+    errStr += err;
   }
   return errStr;
 }
@@ -32,6 +33,8 @@ enum MieleDeviceIds {
   Dryer = 2,
   DishWasher = 7,
   Hood = 18,
+  Fridge = 19,
+  FridgeFreezer = 21,
   WasherDryer = 24,
 }
 
@@ -50,6 +53,7 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
   public readonly language = this.config.language || '';
   public readonly disableStopActionFor: string[] = <string[]>this.config.disableStopActionFor || [];
   public readonly disableTempSensorFor: string[] = <string[]>this.config.disableTempSensorFor || [];
+  public readonly disableSetTargetTempFor: string[] = <string[]>this.config.disableSetTargetTempFor || [];
 
   //-----------------------------------------------------------------------------------------------
   constructor(
@@ -185,20 +189,25 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
 
       case MieleDeviceIds.WasherDryer:
       case MieleDeviceIds.Washer:
-        //return new MieleFridgePlatformAccessory(this, accessory);
+      case MieleDeviceIds.DishWasher: 
+        //return new MieleFridgePlatformAccessory(this, accessory,
+        //  this.disableStopActionFor.includes(MieleDeviceIds[raw_id]),
+        //  this.disableSetTargetTempFor.includes(MieleDeviceIds[raw_id]));
         return new MieleWasherDryerPlatformAccessory(this, accessory, 
-          this.disableStopActionFor.includes('Washing Machines'),
-          this.disableTempSensorFor.includes('Washing Machines')); // TODO: Use enum to string for this instead. Impacts existing configs!
+          this.disableStopActionFor.includes(MieleDeviceIds[raw_id]),
+          this.disableTempSensorFor.includes(MieleDeviceIds[raw_id]));
 
       case MieleDeviceIds.Dryer:
         return new MieleWasherDryerPlatformAccessory(this, accessory, 
-          this.disableStopActionFor.includes('Dryers'),
+          this.disableStopActionFor.includes(MieleDeviceIds[raw_id]),
           true); // Dryer is estimated to not have a target temp attribute.
-      case MieleDeviceIds.DishWasher: 
-        return new MieleWasherDryerPlatformAccessory(this, accessory,
-          this.disableStopActionFor.includes('Dishwashers'),
-          this.disableTempSensorFor.includes('Dishwashers'));
       
+      case MieleDeviceIds.Fridge:
+      case MieleDeviceIds.FridgeFreezer:
+        return new MieleFridgePlatformAccessory(this, accessory,
+          this.disableStopActionFor.includes(MieleDeviceIds[raw_id]),
+          this.disableSetTargetTempFor.includes(MieleDeviceIds[raw_id]));
+
       default:
         return null;
       
@@ -216,7 +225,7 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
   }
 
   //-----------------------------------------------------------------------------------------------
-  // Verify crucial configuration parameters.
+  // Retrieve generic usable HTTP parameters.
   public getHttpRequestConfig(): {headers: Record<string, unknown>} {
     return {
       'headers': { 
@@ -224,6 +233,12 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
         'Content-Type': 'application/json',
       },
     };
+  }
+
+  //-----------------------------------------------------------------------------------------------
+  // Retrieve actions URL
+  public getActionsUrl(serialNumber: string): string {
+    return DEVICES_INFO_URL + '/' + serialNumber + '/actions';
   }
 
 }

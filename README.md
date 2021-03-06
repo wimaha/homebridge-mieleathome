@@ -29,6 +29,10 @@ It (currently) requires a
 - HomeKit identify support via Homebridge log.
 
 ## Breaking changes
+### Versions > 2.5.2
+- _Disable temperature sensor_ and _disable stop action ability_ need to be re-configured as the settings have become
+finer grained (per specific device type instead of per group of device types).
+
 ### Versions >= 2.2.0
 - Due to guided setup, `refreshToken` and `token` are no longer visible in the configuration UI. However if all fails,
   the plugin will still attempt to use these configuration settings as a last resort when they are configured in the `config.json`.

@@ -44,15 +44,18 @@
         "description": "The number of seconds between state retrievals or 0 to disable auto-update."
       },
       "disableStopActionFor": {
-        "title": "Disable stop request ability for",
+        "title": "Prevent stop/off request ability for",
         "type": "array",
         "uniqueItems": true,
         "items": {
           "type": "string",
           "enum": [
-            "Washing Machines",
-            "Dryers",
-            "Dishwashers"
+            "Washer",
+            "Dryer",
+            "WasherDryer",
+            "Dishwasher",
+            "Fridge",
+            "FridgeFreezer"
           ]
         }
       },
@@ -63,8 +66,22 @@
         "items": {
           "type": "string",
           "enum": [
-            "Washing Machines",
-            "Dishwashers"
+            "Washer",
+            "Dryer",
+            "WasherDryer",
+            "Dishwasher"
+          ]
+        }
+      },
+      "disableSetTargetTempFor": {
+        "title": "Prevent adjusting target temperature for",
+        "type": "array",
+        "uniqueItems": true,
+        "items": {
+          "type": "string",
+          "enum": [
+            "Fridge",
+            "FridgeFreezer"
           ]
         }
       }
@@ -97,7 +114,8 @@
       "description": "",
       "items": [
         "disableStopActionFor",
-        "disableTempSensorFor"
+        "disableTempSensorFor",
+        "disableSetTargetTempFor"
       ]
     }
   ]

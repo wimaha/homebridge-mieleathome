@@ -57,7 +57,7 @@ export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessor
     // Temperature sensor service
     this.tempService = this.accessory.getService(this.platform.Service.TemperatureSensor);
     if(!disableTempSensor) {
-      this.platform.log.info('... adding temperature sensor.');
+      this.platform.log.info(`${accessory.context.device.displayName}: Adding temperature sensor.`);
       this.tempService = this.accessory.getService(this.platform.Service.TemperatureSensor) ||
         this.accessory.addService(this.platform.Service.TemperatureSensor);
 
@@ -68,7 +68,7 @@ export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessor
 
     } else if(this.tempService) {
       this.accessory.removeService(this.tempService);
-      this.platform.log.info('... removed temperature sensor.');
+      this.platform.log.info(`${accessory.context.device.displayName}: Removed temperature sensor.`);
     }
 
 
