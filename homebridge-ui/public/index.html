@@ -77,8 +77,8 @@ Copyright (c) 2021, Sander van Woensel
          clientSecret: clientSecret,
         });
       
-      const host = window.location.host.replace(/:[0-9]+/, ':'+serverPort);
-      const redirectUrl = `${window.location.protocol}//${host}/auth_grant`;
+      const host = window.location.host.replace(/:[0-9]+/, '');
+      const redirectUrl = `${window.location.protocol}//${host}:${serverPort}/auth_grant`;
       console.log('Redirect URL set to: '+redirectUrl);
 
       const requestUrl = `https://api.mcs3.miele.com/thirdparty/login?client_id=${clientId}&response_type=code&redirect_uri=${redirectUrl}&state=${state}`;
