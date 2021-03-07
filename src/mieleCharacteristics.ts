@@ -282,7 +282,7 @@ export class MieleRemainingDurationCharacteristic extends MieleReadOnlyCharacter
   //-------------------------------------------------------------------------------------------------
   update(response: MieleStatusResponse): void {
     this.value = response.remainingTime[0]*3600 + response.remainingTime[1]*60;
-    this.platform.log.debug('Parsed RemainingDuration from API response:', this.value, '[s]');
+    this.platform.log.debug('Parsed Remaining Duration from API response:', this.value, '[s]');
 
     this.value = this.value > this.MAX_HOMEKIT_DURATION_S ? this.MAX_HOMEKIT_DURATION_S : this.value;
     this.value = this.value < 0 ? 0 : this.value;
@@ -304,19 +304,21 @@ export class MieleTempCharacteristic extends MieleReadOnlyCharacteristic {
   private readonly NULL_VALUE = 2**16/-2;
   private readonly TEMP_CONVERSION_FACTOR = 100.0;
   protected readonly DEFAULT_ZONE = 1; // Currently only 1 temperature zone supported.
+  static readonly OFF_TEMP = 1;
 
   constructor(
     platform: MieleAtHomePlatform,
     service: Service,
     protected type: TemperatureType, 
   ) {
-    super(platform, service, 0);
+    super(platform, service, MieleTempCharacteristic.OFF_TEMP);
   }
 
   //-------------------------------------------------------------------------------------------------
   update(response: MieleStatusResponse): void {
     let tempArray: MieleStatusResponseTemp[];
     let characteristic;
+    let value = MieleTempCharacteristic.OFF_TEMP; // Set target temperature to 1 when no target temperature available since device is off.
 
     switch(this.type) {
       case TemperatureType.Target:
@@ -332,16 +334,21 @@ export class MieleTempCharacteristic extends MieleReadOnlyCharacteristic {
     
     if(tempArray.length > 0) {
       const valueRaw = tempArray[this.DEFAULT_ZONE-1].value_raw; // Fetch first temperature only.
-      this.platform.log.debug(`Parsed first ${TemperatureType[this.type]} `+
+      this.platform.log.debug(`Parsed zone ${this.DEFAULT_ZONE} ${TemperatureType[this.type]} `+
         `Temperature from API response: ${valueRaw} [C/${this.TEMP_CONVERSION_FACTOR}]`);
     
       if(valueRaw !== this.NULL_VALUE) {
-        this.value = valueRaw / this.TEMP_CONVERSION_FACTOR; // Miele returns values in centi-Celsius
-        this.service.updateCharacteristic(characteristic, this.value); 
-      } else {
-        // Set target temperature to 0 when no target temperature available since device is off.
-        this.service.updateCharacteristic(characteristic, 1);
+        value = valueRaw / this.TEMP_CONVERSION_FACTOR; // Miele returns values in centi-Celsius
       }
+      
+      // Update temperature only when it changed with respect to previous value.
+      // this prevents spamming the error log with warning messages when target temperature is
+      // set to a value <10 (the minimal HomeKit value).
+      if(value !== this.value) {
+        this.value = value;
+        this.service.updateCharacteristic(characteristic, this.value);
+      }
+       
     }
   }
 
@@ -377,7 +384,7 @@ export class MieleTargetTempCharacteristic extends MieleTempCharacteristic {
 
     } catch(response) {
       if(response.response && response.response.status === 500) {
-        this.platform.log.warn(`Ignoring Miele API fault reply code ${response.response.status}. `+
+        this.platform.log.warn(`Set target temperature: ignoring Miele API fault reply code ${response.response.status}. `+
           'Device most probably still acknowlegded (known Miele API misbehaviour).');
       } else {
         this.platform.log.error( createErrorString(response) );
