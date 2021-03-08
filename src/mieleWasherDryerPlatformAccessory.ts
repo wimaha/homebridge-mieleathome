@@ -52,7 +52,12 @@ export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessor
       .on('get', this.getGeneric.bind(this, inUseCharacteristic));
 
     this.mainService.getCharacteristic(this.platform.Characteristic.RemainingDuration)
-      .on('get', this.getGeneric.bind(this, remainingDurationCharacteristic));
+      .on('get', this.getGeneric.bind(this, remainingDurationCharacteristic))
+      .setProps({
+        minValue: 0,    
+        maxValue: 8*3600,
+        minStep: 1,
+      });
 
     // Temperature sensor service
     this.tempService = this.accessory.getService(this.platform.Service.TemperatureSensor);
@@ -61,7 +66,7 @@ export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessor
       this.tempService = this.accessory.getService(this.platform.Service.TemperatureSensor) ||
         this.accessory.addService(this.platform.Service.TemperatureSensor);
 
-      const tempCharacteristic = new MieleTempCharacteristic(this.platform, this.tempService, TemperatureType.Target);
+      const tempCharacteristic = new MieleTempCharacteristic(this.platform, this.tempService, TemperatureType.Target, 0);
       this.characteristics.push(tempCharacteristic);
       this.tempService.getCharacteristic(this.platform.Characteristic.CurrentTemperature)
         .on('get', this.getGeneric.bind(this, tempCharacteristic));
