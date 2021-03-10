@@ -25,7 +25,7 @@ It (currently) requires a
 - Easy setup: guided process to retrieve token via OAuth2 from Miele.
 - Automatic token refreshing.
 - Start / stop (dish) washing machine program (with an option to disable to prevent unintentional program stop requests).
-- Remaining run time of last hour.
+- Remaining run time.
 - Washing machine / dish washer program target temperature.
 - HomeKit identify support via Homebridge log.
 
