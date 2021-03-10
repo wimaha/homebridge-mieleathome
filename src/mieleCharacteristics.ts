@@ -270,7 +270,7 @@ export class MieleTargetCoolingCharacteristic extends MieleWritableBinaryStateCh
 //-------------------------------------------------------------------------------------------------
 export class MieleRemainingDurationCharacteristic extends MieleReadOnlyCharacteristic {
       
-  private readonly MAX_HOMEKIT_DURATION_S = 3600;
+  //private readonly MAX_HOMEKIT_DURATION_S = 3600;
 
   constructor(
     protected platform: MieleAtHomePlatform,
@@ -284,8 +284,15 @@ export class MieleRemainingDurationCharacteristic extends MieleReadOnlyCharacter
     this.value = response.remainingTime[0]*3600 + response.remainingTime[1]*60;
     this.platform.log.debug('Parsed Remaining Duration from API response:', this.value, '[s]');
 
-    this.value = this.value > this.MAX_HOMEKIT_DURATION_S ? this.MAX_HOMEKIT_DURATION_S : this.value;
-    this.value = this.value < 0 ? 0 : this.value;
+    // Clip to min and max value.
+    const characteristic = this.service.getCharacteristic(this.platform.Characteristic.RemainingDuration);
+    const maxValue = characteristic.props.maxValue;
+    const minValue = characteristic.props.minValue;
+
+    if(maxValue && minValue) {
+      this.value = this.value > maxValue ? maxValue : this.value;
+      this.value = this.value < minValue ? minValue : this.value;
+    }
 
     this.service.updateCharacteristic(this.platform.Characteristic.RemainingDuration, this.value); 
   }
@@ -304,21 +311,21 @@ export class MieleTempCharacteristic extends MieleReadOnlyCharacteristic {
   private readonly NULL_VALUE = 2**16/-2;
   private readonly TEMP_CONVERSION_FACTOR = 100.0;
   protected readonly DEFAULT_ZONE = 1; // Currently only 1 temperature zone supported.
-  static readonly OFF_TEMP = 1;
 
   constructor(
     platform: MieleAtHomePlatform,
     service: Service,
-    protected type: TemperatureType, 
+    protected type: TemperatureType,
+    private offTemp: number, 
   ) {
-    super(platform, service, MieleTempCharacteristic.OFF_TEMP);
+    super(platform, service, offTemp);
   }
 
   //-------------------------------------------------------------------------------------------------
   update(response: MieleStatusResponse): void {
     let tempArray: MieleStatusResponseTemp[];
     let characteristic;
-    let value = MieleTempCharacteristic.OFF_TEMP; // Set target temperature to 1 when no target temperature available since device is off.
+    let value = this.offTemp; // Set target temperature to 'off' when no target temperature available since device is off.
 
     switch(this.type) {
       case TemperatureType.Target:
@@ -363,8 +370,9 @@ export class MieleTargetTempCharacteristic extends MieleTempCharacteristic {
     platform: MieleAtHomePlatform,
     service: Service,
     private serialNumber: string,
+    offTemp: number,
   ) {
-    super(platform, service, TemperatureType.Target);
+    super(platform, service, TemperatureType.Target, offTemp);
   }
 
   //-------------------------------------------------------------------------------------------------
@@ -388,6 +396,7 @@ export class MieleTargetTempCharacteristic extends MieleTempCharacteristic {
           'Device most probably still acknowlegded (known Miele API misbehaviour).');
       } else {
         this.platform.log.error( createErrorString(response) );
+        // TODO: This characteristic needs to be added first.
         this.service.setCharacteristic(this.platform.Characteristic.StatusFault, this.platform.Characteristic.StatusFault.GENERAL_FAULT);
       }
     }

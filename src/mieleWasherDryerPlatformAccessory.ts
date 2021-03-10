@@ -15,6 +15,7 @@ import { MieleActiveCharacteristic, MieleInUseCharacteristic, MieleRemainingDura
 //-------------------------------------------------------------------------------------------------
 export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessory {
   private tempService: Service | undefined;
+  private readonly MAX_REMAINING_DURATION = 8*3600;
 
   //-----------------------------------------------------------------------------------------------
   constructor(
@@ -55,7 +56,7 @@ export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessor
       .on('get', this.getGeneric.bind(this, remainingDurationCharacteristic))
       .setProps({
         minValue: 0,    
-        maxValue: 8*3600,
+        maxValue: this.MAX_REMAINING_DURATION,
         minStep: 1,
       });
 
