@@ -181,11 +181,9 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
 
 
     switch (raw_id) {
-      case MieleDeviceIds.Hood: {
+      case MieleDeviceIds.Hood:
         // TODO: Change to class deriving from BasePlatformAccessory.
         return new MieleHoodPlatformAccessory(this, accessory);
-        break;
-      }
 
       case MieleDeviceIds.WasherDryer:
       case MieleDeviceIds.Washer:

@@ -59,6 +59,7 @@ Fridge / Fridge Freezer combination:
 ## Planned features
 - Add support for oven, hob and coffee machine?
 - Add Custom characteristic to display current program running.
+- Event based instead of poll based.
 
 ## Thanks
 - [MichelRabozee](https://github.com/MichelRabozee)

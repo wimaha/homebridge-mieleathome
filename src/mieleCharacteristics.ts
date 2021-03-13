@@ -24,7 +24,7 @@ enum MieleProcessAction {
 export interface IMieleCharacteristic {
   get(callback: CharacteristicGetCallback): void; 
   set(value: CharacteristicValue, callback: CharacteristicSetCallback): void;
-  update(esponse: MieleStatusResponse): void;
+  update(response: MieleStatusResponse): void;
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -349,8 +349,6 @@ export class MieleTempCharacteristic extends MieleReadOnlyCharacteristic {
       }
       
       // Update temperature only when it changed with respect to previous value.
-      // this prevents spamming the error log with warning messages when target temperature is
-      // set to a value <10 (the minimal HomeKit value).
       if(value !== this.value) {
         this.value = value;
         this.service.updateCharacteristic(characteristic, this.value);

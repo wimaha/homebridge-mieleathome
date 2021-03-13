@@ -41,8 +41,10 @@ export abstract class MieleBasePlatformAccessory {
   private stateUrl = DEVICES_INFO_URL + '/' + this.accessory.context.device.uniqueId + '/state';
   private lastCacheUpdateTime = 0;
   private cacheUpdateQueued = false;
+  private cachedResponse: MieleStatusResponse | null = null;
   protected mainService!: Service;
   protected characteristics: IMieleCharacteristic[] = [];
+
 
   //-------------------------------------------------------------------------------------------------
   constructor(
@@ -98,8 +100,13 @@ export abstract class MieleBasePlatformAccessory {
     this.cacheUpdateQueued = true;
 
     axios.get(this.stateUrl, this.platform.getHttpRequestConfig()).then( (response) => {
-      for(const characteristic of this.characteristics) {
-        characteristic.update(response.data);
+      
+      if(JSON.stringify(response.data) !== JSON.stringify(this.cachedResponse)) {
+
+        for(const characteristic of this.characteristics) {
+          characteristic.update(response.data);
+        }
+        this.cachedResponse = response.data;
       }
       
       this.lastCacheUpdateTime = Date.now();
