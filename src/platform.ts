@@ -31,7 +31,7 @@ export function createErrorString(err) : string {
 enum MieleDeviceIds {
   Washer = 1,
   Dryer = 2,
-  DishWasher = 7,
+  Dishwasher = 7,
   Hood = 18,
   Fridge = 19,
   FridgeFreezer = 21,
@@ -187,7 +187,7 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
 
       case MieleDeviceIds.WasherDryer:
       case MieleDeviceIds.Washer:
-      case MieleDeviceIds.DishWasher: 
+      case MieleDeviceIds.Dishwasher: 
         // return new MieleFridgePlatformAccessory(this, accessory,
         //   this.disableStopActionFor.includes(MieleDeviceIds[raw_id]),
         //   this.disableSetTargetTempFor.includes(MieleDeviceIds[raw_id]));
