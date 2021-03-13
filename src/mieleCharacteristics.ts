@@ -325,7 +325,7 @@ export class MieleTempCharacteristic extends MieleReadOnlyCharacteristic {
   update(response: MieleStatusResponse): void {
     let tempArray: MieleStatusResponseTemp[];
     let characteristic;
-    let value = this.offTemp; // Set target temperature to 'off' when no target temperature available since device is off.
+    this.value = this.offTemp; // Set target temperature to 'off' when no target temperature available since device is off.
 
     switch(this.type) {
       case TemperatureType.Target:
@@ -345,14 +345,10 @@ export class MieleTempCharacteristic extends MieleReadOnlyCharacteristic {
         `Temperature from API response: ${valueRaw} [C/${this.TEMP_CONVERSION_FACTOR}]`);
     
       if(valueRaw !== this.NULL_VALUE) {
-        value = valueRaw / this.TEMP_CONVERSION_FACTOR; // Miele returns values in centi-Celsius
+        this.value = valueRaw / this.TEMP_CONVERSION_FACTOR; // Miele returns values in centi-Celsius
       }
-      
-      // Update temperature only when it changed with respect to previous value.
-      if(value !== this.value) {
-        this.value = value;
-        this.service.updateCharacteristic(characteristic, this.value);
-      }
+
+      this.service.updateCharacteristic(characteristic, this.value);
        
     }
   }
