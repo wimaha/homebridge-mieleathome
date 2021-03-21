@@ -49,7 +49,7 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
   public readonly accessories: PlatformAccessory[] = [];
 
   public token: Token | null = null;
-  public readonly pollInterval: number = parseInt(<string>this.config.pollInterval);
+  public readonly reconnectEventServerInterval: number = parseInt(<string>this.config.reconnectEventServerInterval);
   public readonly language = this.config.language || '';
   public readonly disableStopActionFor: string[] = <string[]>this.config.disableStopActionFor || [];
   public readonly disableTempSensorFor: string[] = <string[]>this.config.disableTempSensorFor || [];

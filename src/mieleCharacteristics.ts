@@ -28,27 +28,31 @@ export interface IMieleCharacteristic {
 }
 
 //-------------------------------------------------------------------------------------------------
-// Miele Read Only Characteristic
+// Miele Base Characteristic
 //-------------------------------------------------------------------------------------------------
-abstract class MieleReadOnlyCharacteristic implements IMieleCharacteristic {
+abstract class MieleBaseCharacteristic implements IMieleCharacteristic {
+
+  protected readonly deviceName;
 
   constructor(
     protected platform: MieleAtHomePlatform,
     protected service: Service,
+    protected readonly characteristic,
     protected value,
   ) {
+    this.deviceName = this.service.getCharacteristic(this.platform.Characteristic.Name).value;
   }
 
   //-------------------------------------------------------------------------------------------------
-  // These methods always returns the status from cache wich might be outdated, but will be
-  // updated as soon as possible by the update function.
+  // These methods always returns the status from cache as the cache is updated from the event server.
   get(callback: CharacteristicGetCallback) {
+    this.platform.log.debug(`${this.deviceName}: Returning ${this.value} for ${this.characteristic.name}.`);
     callback(null, this.value);
   }
 
   //-------------------------------------------------------------------------------------------------
   set(_value: CharacteristicValue, _callback: CharacteristicSetCallback): void {
-    this.platform.log.error('Attempt to set a read only characteristic. Ignored.');
+    throw new Error('"set method mut be overridden.');
   }
 
   //-------------------------------------------------------------------------------------------------
@@ -56,23 +60,50 @@ abstract class MieleReadOnlyCharacteristic implements IMieleCharacteristic {
     throw new Error('"update" method must be overridden.');
   }
 
+  //-------------------------------------------------------------------------------------------------
+  // Update value only when not equal to cached value.
+  protected updateCharacteristic(value: string | number, logInfo = true) {
+    if(value!==this.value) {
+      const logStr = `${this.deviceName}: Updating characteristic ${this.characteristic.name} to ${value}.`;
+      if(logInfo) {
+        this.platform.log.info(logStr);
+      } else {
+        this.platform.log.debug(logStr);
+      }
+      this.value = value;
+      this.service.updateCharacteristic(this.characteristic, this.value);
+    }
+  }
+
+  //-------------------------------------------------------------------------------------------------
+  // Undo state
+  protected undoSetState(value: CharacteristicValue) {
+    if(value !== this.value) {
+      this.platform.log.info(`${this.deviceName}: Reverting state to ${this.value}.`);
+
+      setTimeout(()=> {
+        this.service.updateCharacteristic(this.characteristic, this.value); 
+      }, REVERT_ACTIVATE_REQUEST_TIMEOUT_MS);
+    }
+  }
+
 }
 
 //-------------------------------------------------------------------------------------------------
 // Base class: Miele Binary State Characteristic
 //-------------------------------------------------------------------------------------------------
-abstract class MieleBinaryStateCharacteristic extends MieleReadOnlyCharacteristic {
+abstract class MieleBinaryStateCharacteristic extends MieleBaseCharacteristic {
       
   constructor(
     platform: MieleAtHomePlatform,
     service: Service,
     private readonly inactiveStates: MieleState[] | null,
     private readonly activeStates: MieleState[] | null,
-    protected readonly characteristicType,
+    characteristicType,
     protected readonly offState: number,
     protected readonly onState: number,
   ) {
-    super(platform, service, offState);
+    super(platform, service, characteristicType, offState);
   }
 
   set(_value: CharacteristicValue, _callback: CharacteristicSetCallback): void {
@@ -81,25 +112,21 @@ abstract class MieleBinaryStateCharacteristic extends MieleReadOnlyCharacteristi
 
   //-------------------------------------------------------------------------------------------------
   update(response: MieleStatusResponse): void {
+    let value = this.offState;
 
     if (this.inactiveStates) {
-      if(this.inactiveStates.includes(response.status.value_raw)) {
-        this.value = this.offState;
-      } else {
-        this.value = this.onState;
+      if(!this.inactiveStates.includes(response.status.value_raw)) {
+        value = this.onState;
       }
     } else if (this.activeStates) {
       if(this.activeStates.includes(response.status.value_raw)) {
-        this.value = this.onState;
-      } else {
-        this.value = this.offState;
+        value = this.onState;
       }
     } else {
-      throw new Error('Neither active or inactive states supplied. Cannot determine state.');
+      throw new Error(`${this.deviceName}: Neither active or inactive states supplied. Cannot determine state.`);
     }
     
-    this.platform.log.debug(`Parsed ${this.characteristicType.name} from API response: ${this.value}`);
-    this.service.updateCharacteristic(this.characteristicType, this.value); 
+    this.updateCharacteristic(value);
   }
 
 }
@@ -168,12 +195,13 @@ export class MieleWritableBinaryStateCharacteristic extends MieleBinaryStateChar
   //-------------------------------------------------------------------------------------------------
   // Set
   async set(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-    this.platform.log.debug(`Set characteristic ${this.characteristicType.name} to: ${value}`);
+    this.platform.log.debug(`${this.deviceName}: Set characteristic ${this.characteristic.name} to: ${value}`);
     
     callback(null);
 
     if(this.disableDeactivateAction && value===this.offState) {
-      this.platform.log.info(`${this.serialNumber}: Ignoring deactivate request. User disabled deactivation request for this device.`);
+      this.platform.log.info(`${this.deviceName} (${this.serialNumber}): Ignoring deactivate request. `+
+        'User disabled deactivation request for this device.');
       this.undoSetState(value);
       return;
     }
@@ -181,7 +209,7 @@ export class MieleWritableBinaryStateCharacteristic extends MieleBinaryStateChar
     try {
       // Retrieve allowed actions for this device in the current state.
       const response = await axios.get(this.platform.getActionsUrl(this.serialNumber), this.platform.getHttpRequestConfig());
-      this.platform.log.debug(`${this.serialNumber}: Allowed process actions: ${response.data.processAction} `);
+      this.platform.log.debug(`${this.deviceName} (${this.serialNumber}): Allowed process actions: ${response.data.processAction}.`);
 
       let mieleProcesAction = this.mieleOffState;
       if(value===this.onState) {
@@ -190,15 +218,16 @@ export class MieleWritableBinaryStateCharacteristic extends MieleBinaryStateChar
 
       // If allowed to execute action.
       if(response.data.processAction.includes(mieleProcesAction)) {
-        this.platform.log.info(`${this.serialNumber}: Process action "${MieleProcessAction[mieleProcesAction]}" (${mieleProcesAction}).`);
+        this.platform.log.info(`${this.deviceName} (${this.serialNumber}): Process action `+
+          `"${MieleProcessAction[mieleProcesAction]}" (${mieleProcesAction}).`);
         const response = await axios.put(this.platform.getActionsUrl(this.serialNumber), {processAction: mieleProcesAction},
           this.platform.getHttpRequestConfig());
-        this.platform.log.debug(`Process action response code: ${response.status}: "${response.statusText}"`);
+        this.platform.log.debug(`${this.deviceName}: Process action response code: ${response.status}: "${response.statusText}"`);
       } else {
         // Requested action not allowed
-        this.platform.log.info(`${this.serialNumber}: Ignoring request to set device to HomeKit value ${value}. Miele action `+
-          `"${MieleProcessAction[mieleProcesAction]}" (${mieleProcesAction}) not allowed in current device state. Allowed Miele process `+
-          `actions: ${response.data.processAction ? '<none>' : response.data.processAction}`);
+        this.platform.log.info(`${this.deviceName} (${this.serialNumber}): Ignoring request to set device to HomeKit value ${value}. `+
+          `Miele action "${MieleProcessAction[mieleProcesAction]}" (${mieleProcesAction}) not allowed in current device state. `+
+          `Allowed Miele process actions: ${response.data.processAction ? '<none>' : response.data.processAction}`);
         
         // Undo state change to emulate a readonly state (since HomeKit valves are read/write)
         this.undoSetState(value);
@@ -207,18 +236,6 @@ export class MieleWritableBinaryStateCharacteristic extends MieleBinaryStateChar
       this.platform.log.error( createErrorString(response) );
       this.service.setCharacteristic(this.platform.Characteristic.StatusFault, this.platform.Characteristic.StatusFault.GENERAL_FAULT);
 
-    }
-  }
-
-  //-------------------------------------------------------------------------------------------------
-  // Undo state
-  private undoSetState(value: CharacteristicValue) {
-    if(value !== this.value) {
-      this.platform.log.info(`${this.serialNumber}: Reverting state to ${this.value}.`);
-
-      setTimeout(()=> {
-        this.service.updateCharacteristic(this.characteristicType, this.value); 
-      }, REVERT_ACTIVATE_REQUEST_TIMEOUT_MS);
     }
   }
 
@@ -268,7 +285,7 @@ export class MieleTargetCoolingCharacteristic extends MieleWritableBinaryStateCh
 //-------------------------------------------------------------------------------------------------
 // Miele Remaining Duration Characteristic
 //-------------------------------------------------------------------------------------------------
-export class MieleRemainingDurationCharacteristic extends MieleReadOnlyCharacteristic {
+export class MieleRemainingDurationCharacteristic extends MieleBaseCharacteristic {
       
   //private readonly MAX_HOMEKIT_DURATION_S = 3600;
 
@@ -276,13 +293,13 @@ export class MieleRemainingDurationCharacteristic extends MieleReadOnlyCharacter
     protected platform: MieleAtHomePlatform,
     protected service: Service,
   ) {
-    super(platform, service, 0);
+    super(platform, service, platform.Characteristic.RemainingDuration, 0);
   }
 
   //-------------------------------------------------------------------------------------------------
   update(response: MieleStatusResponse): void {
-    this.value = response.remainingTime[0]*3600 + response.remainingTime[1]*60;
-    this.platform.log.debug('Parsed Remaining Duration from API response:', this.value, '[s]');
+    let value = response.remainingTime[0]*3600 + response.remainingTime[1]*60;
+    this.platform.log.debug(`${this.deviceName}: Remaing Duration update received: ${value}[s]`);
 
     // Clip to min and max value.
     const characteristic = this.service.getCharacteristic(this.platform.Characteristic.RemainingDuration);
@@ -290,11 +307,11 @@ export class MieleRemainingDurationCharacteristic extends MieleReadOnlyCharacter
     const minValue = characteristic.props.minValue;
 
     if(maxValue && minValue) {
-      this.value = this.value > maxValue ? maxValue : this.value;
-      this.value = this.value < minValue ? minValue : this.value;
+      value = value > maxValue ? maxValue : value;
+      value = value < minValue ? minValue : value;
     }
 
-    this.service.updateCharacteristic(this.platform.Characteristic.RemainingDuration, this.value); 
+    this.updateCharacteristic(value, false);
   }
 
 }
@@ -307,7 +324,7 @@ export enum TemperatureType {
   Current
 }
 
-export class MieleTempCharacteristic extends MieleReadOnlyCharacteristic {  
+export class MieleTempCharacteristic extends MieleBaseCharacteristic {  
   private readonly NULL_VALUE = 2**16/-2;
   private readonly TEMP_CONVERSION_FACTOR = 100.0;
   protected readonly DEFAULT_ZONE = 1; // Currently only 1 temperature zone supported.
@@ -316,39 +333,46 @@ export class MieleTempCharacteristic extends MieleReadOnlyCharacteristic {
     platform: MieleAtHomePlatform,
     service: Service,
     protected type: TemperatureType,
-    private offTemp: number, 
+    characteristic,
+    private offTemp: number,
   ) {
-    super(platform, service, offTemp);
+    super(platform, service, characteristic, offTemp);
   }
 
   //-------------------------------------------------------------------------------------------------
   update(response: MieleStatusResponse): void {
     let tempArray: MieleStatusResponseTemp[];
-    let characteristic;
-    this.value = this.offTemp; // Set target temperature to 'off' when no target temperature available since device is off.
+    let value = this.offTemp; // Set target temperature to 'off' when no target temperature available since device is off.
 
     switch(this.type) {
       case TemperatureType.Target:
         tempArray = response.targetTemperature;
-        characteristic = this.platform.Characteristic.TargetTemperature;
         break;
       case TemperatureType.Current:
         tempArray = response.temperature;
-        characteristic = this.platform.Characteristic.CurrentTemperature;
-
         break;
     }
     
     if(tempArray.length > 0) {
       const valueRaw = tempArray[this.DEFAULT_ZONE-1].value_raw; // Fetch first temperature only.
-      this.platform.log.debug(`Parsed zone ${this.DEFAULT_ZONE} ${TemperatureType[this.type]} `+
-        `Temperature from API response: ${valueRaw} [C/${this.TEMP_CONVERSION_FACTOR}]`);
+      this.platform.log.debug(`${this.deviceName}: Zone ${this.DEFAULT_ZONE} ${TemperatureType[this.type]} `+
+        `Temperature update received: ${valueRaw}[C/${this.TEMP_CONVERSION_FACTOR}]`);
     
       if(valueRaw !== this.NULL_VALUE) {
-        this.value = valueRaw / this.TEMP_CONVERSION_FACTOR; // Miele returns values in centi-Celsius
+        value = valueRaw / this.TEMP_CONVERSION_FACTOR; // Miele returns values in centi-Celsius
       }
 
-      this.service.updateCharacteristic(characteristic, this.value);
+      // Clip to min and max value.
+      const characteristicObj = this.service.getCharacteristic(this.characteristic);
+      const maxValue = characteristicObj.props.maxValue;
+      const minValue = characteristicObj.props.minValue;
+
+      if(maxValue && minValue) {
+        value = value > maxValue ? maxValue : value;
+        value = value < minValue ? minValue : value;
+      }
+
+      this.updateCharacteristic(value);
        
     }
   }
@@ -365,8 +389,9 @@ export class MieleTargetTempCharacteristic extends MieleTempCharacteristic {
     service: Service,
     private serialNumber: string,
     offTemp: number,
+    private disableSetTargetTemp: boolean,
   ) {
-    super(platform, service, TemperatureType.Target, offTemp);
+    super(platform, service, TemperatureType.Target, platform.Characteristic.TargetTemperature, offTemp);
   }
 
   //-------------------------------------------------------------------------------------------------
@@ -374,7 +399,14 @@ export class MieleTargetTempCharacteristic extends MieleTempCharacteristic {
   async set(value: CharacteristicValue, callback: CharacteristicSetCallback) {
     callback(null);
 
-    this.platform.log.debug(`Set characteristic "${TemperatureType[this.type]} temperature" to: ${value}`);
+    if(this.disableSetTargetTemp) {
+      this.platform.log.info(`${this.deviceName} (${this.serialNumber}): Ignoring set ${TemperatureType[this.type]} temperature request. `+
+        `User disabled modifying ${TemperatureType[this.type]} temperature for this device.`);
+      this.undoSetState(value);
+      return;
+    }
+
+    this.platform.log.debug(`${this.deviceName}: Set characteristic "${TemperatureType[this.type]} temperature" to: ${value}`);
 
     try {
       const response = await axios.put(this.platform.getActionsUrl(this.serialNumber),
@@ -382,13 +414,17 @@ export class MieleTargetTempCharacteristic extends MieleTempCharacteristic {
           [{zone:this.DEFAULT_ZONE, value: value}], // Setting is done in Celsius, retrieving returns centi-Celsius.
         }, this.platform.getHttpRequestConfig());
 
-      this.platform.log.debug(`Set target temperature response code: ${response.status}: "${response.statusText}"`);
+      this.platform.log.debug(`${this.deviceName}: Set target temperature response code: ${response.status}: "${response.statusText}"`);
+
 
     } catch(response) {
       if(response.response && response.response.status === 500) {
-        this.platform.log.warn(`Set target temperature: ignoring Miele API fault reply code ${response.response.status}. `+
+        this.platform.log.warn(`${this.deviceName}: Set target temperature: ignoring Miele API fault reply code `+
+          ` ${response.response.status}. `+
           'Device most probably still acknowlegded (known Miele API misbehaviour).');
       } else {
+        this.undoSetState(value);
+
         this.platform.log.error( createErrorString(response) );
         // TODO: This characteristic needs to be added first.
         this.service.setCharacteristic(this.platform.Characteristic.StatusFault, this.platform.Characteristic.StatusFault.GENERAL_FAULT);
@@ -402,24 +438,24 @@ export class MieleTargetTempCharacteristic extends MieleTempCharacteristic {
 //-------------------------------------------------------------------------------------------------
 // Miele Temperature Unit Characteristic
 //-------------------------------------------------------------------------------------------------
-export class MieleTemperatureUnitCharacteristic extends MieleReadOnlyCharacteristic {
+export class MieleTemperatureUnitCharacteristic extends MieleBaseCharacteristic {
 
   constructor(
     platform: MieleAtHomePlatform,
     service: Service,
   ) {
-    super(platform, service, platform.Characteristic.TemperatureDisplayUnits.CELSIUS);
+    super(platform, service, platform.Characteristic.TemperatureDisplayUnits, platform.Characteristic.TemperatureDisplayUnits.CELSIUS);
   }
 
   //-------------------------------------------------------------------------------------------------
   update(response: MieleStatusResponse): void {
-    if(response.temperature[0].unit === 'Celsius' ) {
-      this.value = this.platform.Characteristic.TemperatureDisplayUnits.CELSIUS;
-    } else {
-      this.value = this.platform.Characteristic.TemperatureDisplayUnits.FAHRENHEIT;
+    let value = this.platform.Characteristic.TemperatureDisplayUnits.CELSIUS;
+    
+    if(response.temperature[0].unit === 'Fahrenheit' ) {
+      value = this.platform.Characteristic.TemperatureDisplayUnits.FAHRENHEIT;
     }
-    this.platform.log.debug(`Parsed Temperature Unit from API response: ${response.temperature[0].unit} (HomeKit value: ${this.value})`);
-    this.service.updateCharacteristic(this.platform.Characteristic.TemperatureDisplayUnits, this.value); 
+
+    this.updateCharacteristic(value);
   }
 
 }

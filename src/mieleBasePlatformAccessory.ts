@@ -1,14 +1,13 @@
 // Apacche License
 // Copyright (c) 2020, Sander van Woensel
 
-import { PlatformAccessory, CharacteristicGetCallback, CharacteristicSetCallback, Service, CharacteristicValue } from 'homebridge';
+import { PlatformAccessory, CharacteristicSetCallback, Service, CharacteristicValue } from 'homebridge';
 
-import { DEVICES_INFO_URL, CACHE_RETIREMENT_TIME_MS } from './settings';
-import { MieleAtHomePlatform, createErrorString } from './platform';
+import { DEVICES_INFO_URL, EVENT_SERVER_RECONNECT_DELAY_S } from './settings';
+import { MieleAtHomePlatform } from './platform';
 import { IMieleCharacteristic } from './mieleCharacteristics';
 
-import axios from 'axios';
-
+import EventSource from 'eventsource';
 
 export enum MieleState {
   Off = 1,
@@ -38,13 +37,10 @@ export interface MieleStatusResponse {
 // Class Base Miele Accessory
 //-------------------------------------------------------------------------------------------------
 export abstract class MieleBasePlatformAccessory {
-  private stateUrl = DEVICES_INFO_URL + '/' + this.accessory.context.device.uniqueId + '/state';
-  private lastCacheUpdateTime = 0;
-  private cacheUpdateQueued = false;
-  private cachedResponse: MieleStatusResponse | null = null;
+  private eventUrl = DEVICES_INFO_URL + '/' + this.accessory.context.device.uniqueId + '/events';
   protected mainService!: Service;
   protected characteristics: IMieleCharacteristic[] = [];
-
+  private eventSource: EventSource | null = null;
 
   //-------------------------------------------------------------------------------------------------
   constructor(
@@ -61,30 +57,51 @@ export abstract class MieleBasePlatformAccessory {
       .getCharacteristic(this.platform.Characteristic.Identify)
       .on('set', this.identify.bind(this));
 
-    // Start polling
-    if(this.platform.pollInterval > 0) {
-      setInterval(this.update.bind(this), this.platform.pollInterval*1000);
-    }
+    this.connectToEventServer();
 
-  }
+    setInterval(this.connectToEventServer.bind(this), this.platform.reconnectEventServerInterval*60*1000);
 
-  //-------------------------------------------------------------------------------------------------
-  protected isCacheRetired(): boolean {
-    const retired = (this.lastCacheUpdateTime < Date.now() - CACHE_RETIREMENT_TIME_MS) &&
-       !this.cacheUpdateQueued;
-
-    if (retired) {
-      this.platform.log.debug('Cache retired. Status update enforced.');
-    }
-    return retired;
   }
 
   //-----------------------------------------------------------------------------------------------
-  protected getGeneric(characteristic: IMieleCharacteristic, callback: CharacteristicGetCallback) {
-    if (this.isCacheRetired()) {
-      this.update();
+  private connectToEventServer() {
+    // Close previous
+    if(this.eventSource) {
+      this.eventSource.close();
+      this.eventSource = null;
     }
-    return characteristic.get(callback);
+
+    const config = this.platform.getHttpRequestConfig();
+    config.headers['Authorization'] = this.platform.token?.getAccessToken();
+    config.headers['Accept'] = 'text/event-stream';
+
+    this.eventSource = new EventSource(this.eventUrl, config);
+
+    this.eventSource.addEventListener('device', (event) => {
+      this.platform.log.debug(`${this.accessory.context.device.displayName}: Event '${event.type}' received.`);
+      const data = JSON.parse(event['data']);
+      this.update(data.state);
+    });
+
+    this.eventSource.onopen = (_message) => {
+      this.platform.log.info(`${this.accessory.context.device.displayName}: `+
+        'Connection with Miele event server succesfully (re-)established.');
+    };
+
+    // TODO: improve. Maybe check what Miele raises manually first
+    this.eventSource.onerror = (error) => {
+      this.eventSource?.close();
+      this.platform.log.error(`${this.accessory.context.device.displayName}: Error received from Miele event server: `+
+        `'${JSON.stringify(error)}'`);
+      this.mainService.setCharacteristic(this.platform.Characteristic.StatusFault, this.platform.Characteristic.StatusFault.GENERAL_FAULT);
+
+      this.platform.log.info(`${this.accessory.context.device.displayName}: Will attempt to reconnect to the Miele event server after`+
+        ` ${EVENT_SERVER_RECONNECT_DELAY_S}[s].`);
+      setTimeout(()=> {
+        this.connectToEventServer();
+      }, EVENT_SERVER_RECONNECT_DELAY_S*1000);
+    };
+
   }
 
   //-----------------------------------------------------------------------------------------------
@@ -95,29 +112,13 @@ export abstract class MieleBasePlatformAccessory {
 
   //-----------------------------------------------------------------------------------------------
   // Update all characteristics
-  protected update(): void {
-    this.platform.log.debug(`Update called. Requesting: ${this.stateUrl}`);
-    this.cacheUpdateQueued = true;
+  protected update(deviceData: MieleStatusResponse): void {
+    for(const characteristic of this.characteristics) {
+      characteristic.update(deviceData);
+    }
 
-    axios.get(this.stateUrl, this.platform.getHttpRequestConfig()).then( (response) => {
-      
-      if(JSON.stringify(response.data) !== JSON.stringify(this.cachedResponse)) {
-
-        for(const characteristic of this.characteristics) {
-          characteristic.update(response.data);
-        }
-        this.cachedResponse = response.data;
-      }
-      
-      this.lastCacheUpdateTime = Date.now();
-      this.cacheUpdateQueued = false;
-
-      this.mainService.setCharacteristic(this.platform.Characteristic.StatusFault, this.platform.Characteristic.StatusFault.NO_FAULT);
-      
-    }).catch(response => {
-      this.platform.log.error( createErrorString(response) );
-      this.mainService.setCharacteristic(this.platform.Characteristic.StatusFault, this.platform.Characteristic.StatusFault.GENERAL_FAULT);
-    });
+    this.mainService.setCharacteristic(this.platform.Characteristic.StatusFault, this.platform.Characteristic.StatusFault.NO_FAULT);
+    
   }
 
 }

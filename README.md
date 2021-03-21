@@ -24,12 +24,17 @@ It (currently) requires a
 ## Features
 - Easy setup: guided process to retrieve token via OAuth2 from Miele.
 - Automatic token refreshing.
+- Event based.
 - Start / stop (dish) washing machine program (with an option to disable to prevent unintentional program stop requests).
 - Remaining run time.
 - Washing machine / dish washer program target temperature.
 - HomeKit identify support via Homebridge log.
 
 ## Breaking changes
+### Versions > 2.8.0
+- The introduction of event based updating removed the need for the _Poll interval_ setting. This option can be removed from
+your config when you see a need to clean up your config.
+
 ### Versions > 2.5.2
 - _Disable temperature sensor_ and _disable stop action ability_ need to be re-configured as the settings have become
 finer grained (per specific device type instead of per group of device types).
@@ -59,7 +64,6 @@ Fridge / Fridge Freezer combination:
 ## Planned features
 - Add support for oven, hob and coffee machine?
 - Add Custom characteristic to display current program running.
-- Event based instead of poll based.
 
 ## Thanks
 - [MichelRabozee](https://github.com/MichelRabozee)

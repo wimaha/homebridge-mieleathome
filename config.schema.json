@@ -35,13 +35,13 @@
         ],
         "description": "Determines in what language the device name will be displayed in HomeKit."
       },
-      "pollInterval": {
-        "title": "Poll interval [s]",
+      "reconnectEventServerInterval": {
+        "title": "Force event server reconnect interval [min]",
         "type": "number",
         "required": false,
-        "minimum": 0,
+        "minimum": 1,
         "default": 60,
-        "description": "The number of seconds between state retrievals or 0 to disable auto-update."
+        "description": "The interval at which a reconnect to the Miele event server is enforced."
       },
       "disableStopActionFor": {
         "title": "Prevent stop/off request ability for",
@@ -53,9 +53,7 @@
             "Washer",
             "Dryer",
             "WasherDryer",
-            "Dishwasher",
-            "Fridge",
-            "FridgeFreezer"
+            "Dishwasher"
           ]
         }
       },
@@ -102,7 +100,6 @@
       "expandable": true,
       "title": "General",
       "items": [
-        "pollInterval",
         "language"
       ]
     },
@@ -112,6 +109,7 @@
       "title": "Advanced",
       "description": "",
       "items": [
+        "reconnectEventServerInterval",
         "disableStopActionFor",
         "disableTempSensorFor",
         "disableSetTargetTempFor"

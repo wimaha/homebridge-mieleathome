@@ -33,11 +33,12 @@ export class MieleFridgePlatformAccessory extends MieleBasePlatformAccessory {
     const currentCoolingStateCharacteristic = new MieleCurrentCoolingCharacteristic(this.platform, this.mainService,
       null, [MieleState.InUse]);
     const targetCoolingStateCharacterictic = new MieleTargetCoolingCharacteristic(this.platform, this.mainService,
-      null, [MieleState.InUse], accessory.context.device.uniqueId, disableChangeTargetTemperature);
+      null, [MieleState.InUse], accessory.context.device.uniqueId, disableStopAction);
 
-    const currentTemperatureCharacteristic = new MieleTempCharacteristic(this.platform, this.mainService, TemperatureType.Current, 0);
+    const currentTemperatureCharacteristic = new MieleTempCharacteristic(this.platform, this.mainService,
+      TemperatureType.Current, this.platform.Characteristic.CurrentTemperature, 0);
     const targetTemperatureCharacteristic = new MieleTargetTempCharacteristic(this.platform,
-      this.mainService, accessory.context.device.uniqueId, 1);
+      this.mainService, accessory.context.device.uniqueId, 1, disableChangeTargetTemperature);
     const temperatureUnitCharacteristic = new MieleTemperatureUnitCharacteristic(this.platform, this.mainService);
 
     this.characteristics.push(currentCoolingStateCharacteristic);
@@ -49,11 +50,11 @@ export class MieleFridgePlatformAccessory extends MieleBasePlatformAccessory {
     // Each service must implement at-minimum the "required characteristics" for the given service type
     // see https://developers.homebridge.io/#/service/Thermostat
     this.mainService.getCharacteristic(this.platform.Characteristic.CurrentHeatingCoolingState)
-      .on('get', this.getGeneric.bind(this, currentCoolingStateCharacteristic));
+      .on('get', currentCoolingStateCharacteristic.get.bind(currentCoolingStateCharacteristic));
     
     // Fridge can only cool.
     this.mainService.getCharacteristic(this.platform.Characteristic.TargetHeatingCoolingState)
-      .on('get', this.getGeneric.bind(this, targetCoolingStateCharacterictic))
+      .on('get', targetCoolingStateCharacterictic.get.bind(targetCoolingStateCharacterictic))
       .on('set', targetCoolingStateCharacterictic.set.bind(targetCoolingStateCharacterictic))
       .setProps({
         validValues: [
@@ -62,17 +63,18 @@ export class MieleFridgePlatformAccessory extends MieleBasePlatformAccessory {
         ]});
 
     this.mainService.getCharacteristic(this.platform.Characteristic.CurrentTemperature)
-      .on('get', this.getGeneric.bind(this, currentTemperatureCharacteristic));
+      .on('get', currentTemperatureCharacteristic.get.bind(currentTemperatureCharacteristic));
     this.mainService.getCharacteristic(this.platform.Characteristic.TargetTemperature)
-      .on('get', this.getGeneric.bind(this, targetTemperatureCharacteristic))
-      .on('set', targetTemperatureCharacteristic.set.bind(targetTemperatureCharacteristic))
       .setProps({
         minValue: 1,    
         maxValue: 9,       // TODO: set min/max based on API reply, hard coded for now.
         minStep: 1,
-      });
+      })  
+      .on('get', targetTemperatureCharacteristic.get.bind(targetTemperatureCharacteristic))
+      .on('set', targetTemperatureCharacteristic.set.bind(targetTemperatureCharacteristic));
+
     this.mainService.getCharacteristic(this.platform.Characteristic.TemperatureDisplayUnits)
-      .on('get', this.getGeneric.bind(this, temperatureUnitCharacteristic));
+      .on('get', temperatureUnitCharacteristic.get.bind(temperatureUnitCharacteristic));
     // TODO: base on what miele initial state returns and disallow any other setting
   }
   

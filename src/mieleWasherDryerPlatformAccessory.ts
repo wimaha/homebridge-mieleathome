@@ -46,14 +46,14 @@ export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessor
     // Each service must implement at-minimum the "required characteristics" for the given service type
     // see https://developers.homebridge.io/#/service/Valve
     this.mainService.getCharacteristic(this.platform.Characteristic.Active)
-      .on('get', this.getGeneric.bind(this, activeCharacteristic))
+      .on('get', activeCharacteristic.get.bind(activeCharacteristic))
       .on('set', activeCharacteristic.set.bind(activeCharacteristic));
 
     this.mainService.getCharacteristic(this.platform.Characteristic.InUse)
-      .on('get', this.getGeneric.bind(this, inUseCharacteristic));
+      .on('get', inUseCharacteristic.get.bind(inUseCharacteristic));
 
     this.mainService.getCharacteristic(this.platform.Characteristic.RemainingDuration)
-      .on('get', this.getGeneric.bind(this, remainingDurationCharacteristic))
+      .on('get', remainingDurationCharacteristic.get.bind(remainingDurationCharacteristic))
       .setProps({
         minValue: 0,    
         maxValue: this.MAX_REMAINING_DURATION,
@@ -73,7 +73,7 @@ export class MieleWasherDryerPlatformAccessory extends MieleBasePlatformAccessor
         this.platform.Characteristic.CurrentTemperature, 0);
       this.characteristics.push(tempCharacteristic);
       this.tempService.getCharacteristic(this.platform.Characteristic.CurrentTemperature)
-        .on('get', this.getGeneric.bind(this, tempCharacteristic))
+        .on('get', tempCharacteristic.get.bind(tempCharacteristic))
         .setProps({
           minValue: 0,
           maxValue: 110,
