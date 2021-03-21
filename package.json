@@ -55,7 +55,8 @@
   "release": {
     "branches": [
       "master",
-      "next"
+      "next",
+      "beta"
     ]
   }
 }
