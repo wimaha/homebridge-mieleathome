@@ -19,7 +19,7 @@ It (currently) requires a
 - Miele Washing machine (e.g. WCG370, WMV960).
 - Miele Dryer (e.g. TMV840WP)
 - Miele Dishwasher.
-- Experimental Miele Fridge and Fridge Freezer combination support.
+- Miele Fridge and Fridge Freezer combination.
 
 ## Features
 - Easy setup: guided process to retrieve token via OAuth2 from Miele.
@@ -28,7 +28,10 @@ It (currently) requires a
 - Start / stop (dish) washing machine program (with an option to disable to prevent unintentional program stop requests).
 - Remaining run time.
 - Washing machine / dish washer program target temperature.
+- Fridge / Freezer target and current temperature
+- Set Fridge / Freezer target temperature.
 - HomeKit identify support via Homebridge log.
+
 
 ## Breaking changes
 ### Versions > 2.8.0

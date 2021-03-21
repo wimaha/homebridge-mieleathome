@@ -41,12 +41,16 @@ export abstract class MieleBasePlatformAccessory {
   protected mainService!: Service;
   protected characteristics: IMieleCharacteristic[] = [];
   private eventSource: EventSource | null = null;
+  static deviceInstanceCounter = 0;
 
   //-------------------------------------------------------------------------------------------------
   constructor(
     protected readonly platform: MieleAtHomePlatform,
     protected readonly accessory: PlatformAccessory,
   ) {
+
+    this.platform.log.debug(`${this.accessory.context.device.displayName}: Device instance counter:`,
+      MieleBasePlatformAccessory.deviceInstanceCounter);
 
     // Set accessory information.
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
@@ -57,17 +61,20 @@ export abstract class MieleBasePlatformAccessory {
       .getCharacteristic(this.platform.Characteristic.Identify)
       .on('set', this.identify.bind(this));
 
-    this.connectToEventServer();
+    // Prevent connecting all devices at the same time.
+    setTimeout(this.connectToEventServer.bind(this), MieleBasePlatformAccessory.deviceInstanceCounter*500);
 
     let reconnectTimeout = this.platform.reconnectEventServerInterval;
     if(this.platform.reconnectEventServerInterval <=0) {
-      this.platform.log.warn('Incorrect \'reconnectEventServerInterval\' specified in yur configuration. '+
-        `Value: ${reconnectTimeout}. Should be >0. Using default value ${DEFAULT_RECONNECT_EVENT_SERVER_INTERVAL_MIN}[min] instead.`);
+      this.platform.log.warn('Incorrect \'reconnectEventServerInterval\' specified in your configuration. '+
+        `Value: ${reconnectTimeout} should be >0. Using default value ${DEFAULT_RECONNECT_EVENT_SERVER_INTERVAL_MIN}[min] instead.`);
       reconnectTimeout = DEFAULT_RECONNECT_EVENT_SERVER_INTERVAL_MIN;
     }
 
     const reconnectTimeoutMs=reconnectTimeout*60*1000;
     setInterval(this.connectToEventServer.bind(this), reconnectTimeoutMs);
+
+    MieleBasePlatformAccessory.deviceInstanceCounter++;
 
   }
 
@@ -113,7 +120,8 @@ export abstract class MieleBasePlatformAccessory {
 
   //-----------------------------------------------------------------------------------------------
   protected identify(_value: CharacteristicValue, _callback: CharacteristicSetCallback) {
-    this.platform.log.info(`Identify requested for: ${this.accessory.context.device.modelNumber} `+
+    this.platform.log.info(`Identify requested for: ${this.accessory.context.device.displayName} `+
+      `(${this.accessory.context.device.modelNumber}) `+
       `with serial number: ${this.accessory.context.device.uniqueId}`);
   }
 
