@@ -3,7 +3,7 @@
 
 import { PlatformAccessory, CharacteristicSetCallback, Service, CharacteristicValue } from 'homebridge';
 
-import { DEVICES_INFO_URL, EVENT_SERVER_RECONNECT_DELAY_S } from './settings';
+import { DEVICES_INFO_URL, EVENT_SERVER_RECONNECT_DELAY_S, DEFAULT_RECONNECT_EVENT_SERVER_INTERVAL_MIN } from './settings';
 import { MieleAtHomePlatform } from './platform';
 import { IMieleCharacteristic } from './mieleCharacteristics';
 
@@ -59,7 +59,15 @@ export abstract class MieleBasePlatformAccessory {
 
     this.connectToEventServer();
 
-    setInterval(this.connectToEventServer.bind(this), this.platform.reconnectEventServerInterval*60*1000);
+    let reconnectTimeout = this.platform.reconnectEventServerInterval;
+    if(this.platform.reconnectEventServerInterval <=0) {
+      this.platform.log.warn('Incorrect \'reconnectEventServerInterval\' specified in yur configuration. '+
+        `Value: ${reconnectTimeout}. Should be >0. Using default value ${DEFAULT_RECONNECT_EVENT_SERVER_INTERVAL_MIN}[min] instead.`);
+      reconnectTimeout = DEFAULT_RECONNECT_EVENT_SERVER_INTERVAL_MIN;
+    }
+
+    const reconnectTimeoutMs=reconnectTimeout*60*1000;
+    setInterval(this.connectToEventServer.bind(this), reconnectTimeoutMs);
 
   }
 
@@ -88,7 +96,6 @@ export abstract class MieleBasePlatformAccessory {
         'Connection with Miele event server succesfully (re-)established.');
     };
 
-    // TODO: improve. Maybe check what Miele raises manually first
     this.eventSource.onerror = (error) => {
       this.eventSource?.close();
       this.platform.log.error(`${this.accessory.context.device.displayName}: Error received from Miele event server: `+

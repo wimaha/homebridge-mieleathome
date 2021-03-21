@@ -3,7 +3,7 @@
 
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 
-import { PLATFORM_NAME, PLUGIN_NAME, DEVICES_INFO_URL} from './settings';
+import { PLATFORM_NAME, PLUGIN_NAME, DEVICES_INFO_URL, DEFAULT_RECONNECT_EVENT_SERVER_INTERVAL_MIN} from './settings';
 import { MieleHoodPlatformAccessory } from './mieleHoodPlatformAccessory';
 import { MieleWasherDryerPlatformAccessory } from './mieleWasherDryerPlatformAccessory';
 import { MieleFridgePlatformAccessory } from './mieleFridgePlatformAccessory';
@@ -49,7 +49,9 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
   public readonly accessories: PlatformAccessory[] = [];
 
   public token: Token | null = null;
-  public readonly reconnectEventServerInterval: number = parseInt(<string>this.config.reconnectEventServerInterval);
+  public readonly reconnectEventServerInterval: number = parseInt(<string>this.config.reconnectEventServerInterval ||
+    `${DEFAULT_RECONNECT_EVENT_SERVER_INTERVAL_MIN}`);
+
   public readonly language = this.config.language || '';
   public readonly disableStopActionFor: string[] = <string[]>this.config.disableStopActionFor || [];
   public readonly disableTempSensorFor: string[] = <string[]>this.config.disableTempSensorFor || [];

@@ -29,3 +29,5 @@ export const TOKEN_REFRESH_CHECK_INTERVAL_S = 60*30;
 
 // Delay before attempting to reconnect.
 export const EVENT_SERVER_RECONNECT_DELAY_S = 60;
+
+export const DEFAULT_RECONNECT_EVENT_SERVER_INTERVAL_MIN = 60;
