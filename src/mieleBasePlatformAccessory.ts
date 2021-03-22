@@ -41,20 +41,12 @@ export abstract class MieleBasePlatformAccessory {
   protected mainService!: Service;
   protected characteristics: IMieleCharacteristic[] = [];
   private eventSource: EventSource | null = null;
-  private connectionDelayMs: number;
-  static instanceCounter = 0;
-
 
   //-------------------------------------------------------------------------------------------------
   constructor(
     protected readonly platform: MieleAtHomePlatform,
     protected readonly accessory: PlatformAccessory,
   ) {
-    this.connectionDelayMs = (MieleBasePlatformAccessory.instanceCounter*1000) + 100;
-    MieleBasePlatformAccessory.instanceCounter++;
-
-    this.platform.log.debug(`${this.accessory.context.device.displayName}: Device connection delay:`,
-      `${this.connectionDelayMs}[ms]`);
 
     // Set accessory information.
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
@@ -65,8 +57,7 @@ export abstract class MieleBasePlatformAccessory {
       .getCharacteristic(this.platform.Characteristic.Identify)
       .on('set', this.identify.bind(this));
 
-    // Prevent connecting all devices at the same time.
-    setTimeout(this.connectToEventServer.bind(this), this.connectionDelayMs);
+    this.connectToEventServer();
 
     let reconnectTimeout = this.platform.reconnectEventServerInterval;
     if(this.platform.reconnectEventServerInterval <=0) {
@@ -75,7 +66,7 @@ export abstract class MieleBasePlatformAccessory {
       reconnectTimeout = DEFAULT_RECONNECT_EVENT_SERVER_INTERVAL_MIN;
     }
 
-    const reconnectTimeoutMs= (reconnectTimeout*60*1000)+this.connectionDelayMs;
+    const reconnectTimeoutMs= (reconnectTimeout*60*1000);
     setInterval(this.connectToEventServer.bind(this), reconnectTimeoutMs);
   }
 
@@ -104,23 +95,38 @@ export abstract class MieleBasePlatformAccessory {
         'Connection with Miele event server succesfully (re-)established.');
     };
 
-    this.eventSource.addEventListener('ping', (event) => {
-      this.platform.log.debug(`${this.accessory.context.device.displayName}: Event '${event.type}' received.`);
+    this.eventSource.addEventListener('ping', (_event) => {
+      //this.platform.log.debug(`${this.accessory.context.device.displayName}: Event '${event.type}' received.`);
     });
 
     this.eventSource.onerror = (error) => {
       this.eventSource?.close();
-      this.platform.log.error(`${this.accessory.context.device.displayName}: Error received from Miele event server: `+
-        `'${JSON.stringify(error)}'`);
-      this.mainService.setCharacteristic(this.platform.Characteristic.StatusFault, this.platform.Characteristic.StatusFault.GENERAL_FAULT);
 
-      const reconnectDelayMs = this.connectionDelayMs + EVENT_SERVER_RECONNECT_DELAY_S*1000;
+      interface IError{  
+        message: string; 
+        status: number;
+        type: string; 
+      }  
 
-      this.platform.log.info(`${this.accessory.context.device.displayName}: Will attempt to reconnect to the Miele event server after`+
-        ` ${reconnectDelayMs/1000}[s].`);
+      const errorObj = (<IError><unknown>error);
+
+      // If Miele closed the connection on their end, EventSource raises an empty error object.
+      if(!errorObj.status) {
+        this.platform.log.debug(`${this.accessory.context.device.displayName}: Miele event server `+
+          `connection lost. Auto-reconnect after ${EVENT_SERVER_RECONNECT_DELAY_S}[s]`);
+      } else {
+        this.platform.log.error(`${this.accessory.context.device.displayName}: Error received from Miele event server. `+
+           `Status: ${errorObj.status}. Message: '${errorObj.message}'`);
+        this.mainService.setCharacteristic(this.platform.Characteristic.StatusFault,
+          this.platform.Characteristic.StatusFault.GENERAL_FAULT);
+
+        this.platform.log.info(`${this.accessory.context.device.displayName}: Will attempt to reconnect to the Miele event server after`+
+          ` ${EVENT_SERVER_RECONNECT_DELAY_S}[s].`);
+      }
+      
       setTimeout(()=> {
         this.connectToEventServer();
-      }, reconnectDelayMs);
+      }, EVENT_SERVER_RECONNECT_DELAY_S*1000);
     };
 
   }
