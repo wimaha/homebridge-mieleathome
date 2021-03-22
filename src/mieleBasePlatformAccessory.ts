@@ -41,7 +41,7 @@ export abstract class MieleBasePlatformAccessory {
   protected mainService!: Service;
   protected characteristics: IMieleCharacteristic[] = [];
   private eventSource: EventSource | null = null;
-  static deviceInstanceCounter = 0;
+  static connectionDelayMs = 100;
 
   //-------------------------------------------------------------------------------------------------
   constructor(
@@ -49,8 +49,8 @@ export abstract class MieleBasePlatformAccessory {
     protected readonly accessory: PlatformAccessory,
   ) {
 
-    this.platform.log.debug(`${this.accessory.context.device.displayName}: Device instance counter:`,
-      MieleBasePlatformAccessory.deviceInstanceCounter);
+    this.platform.log.debug(`${this.accessory.context.device.displayName}: Device connection delay:`,
+      `${MieleBasePlatformAccessory.connectionDelayMs}[ms]`);
 
     // Set accessory information.
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
@@ -62,7 +62,7 @@ export abstract class MieleBasePlatformAccessory {
       .on('set', this.identify.bind(this));
 
     // Prevent connecting all devices at the same time.
-    setTimeout(this.connectToEventServer.bind(this), MieleBasePlatformAccessory.deviceInstanceCounter*500);
+    setTimeout(this.connectToEventServer.bind(this), MieleBasePlatformAccessory.connectionDelayMs);
 
     let reconnectTimeout = this.platform.reconnectEventServerInterval;
     if(this.platform.reconnectEventServerInterval <=0) {
@@ -71,10 +71,11 @@ export abstract class MieleBasePlatformAccessory {
       reconnectTimeout = DEFAULT_RECONNECT_EVENT_SERVER_INTERVAL_MIN;
     }
 
-    const reconnectTimeoutMs=reconnectTimeout*60*1000;
+    const reconnectTimeoutMs= (reconnectTimeout*60*1000)+MieleBasePlatformAccessory.connectionDelayMs;
     setInterval(this.connectToEventServer.bind(this), reconnectTimeoutMs);
 
-    MieleBasePlatformAccessory.deviceInstanceCounter++;
+    // Next device will add an additional 1s delay.
+    MieleBasePlatformAccessory.connectionDelayMs += 1000;
 
   }
 
@@ -103,17 +104,23 @@ export abstract class MieleBasePlatformAccessory {
         'Connection with Miele event server succesfully (re-)established.');
     };
 
+    this.eventSource.addEventListener('ping', (event) => {
+      this.platform.log.debug(`${this.accessory.context.device.displayName}: Event '${event.type}' received.`);
+    });
+
     this.eventSource.onerror = (error) => {
       this.eventSource?.close();
       this.platform.log.error(`${this.accessory.context.device.displayName}: Error received from Miele event server: `+
         `'${JSON.stringify(error)}'`);
       this.mainService.setCharacteristic(this.platform.Characteristic.StatusFault, this.platform.Characteristic.StatusFault.GENERAL_FAULT);
 
+      const reconnectLdeayMs = MieleBasePlatformAccessory.connectionDelayMs + EVENT_SERVER_RECONNECT_DELAY_S*1000;
+
       this.platform.log.info(`${this.accessory.context.device.displayName}: Will attempt to reconnect to the Miele event server after`+
-        ` ${EVENT_SERVER_RECONNECT_DELAY_S}[s].`);
+        ` ${reconnectLdeayMs/1000}[s].`);
       setTimeout(()=> {
         this.connectToEventServer();
-      }, EVENT_SERVER_RECONNECT_DELAY_S*1000);
+      }, reconnectLdeayMs);
     };
 
   }
