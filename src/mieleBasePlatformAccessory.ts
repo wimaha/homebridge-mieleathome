@@ -109,7 +109,7 @@ export abstract class MieleBasePlatformAccessory {
 
         case ReconnectReason.Error:
           this.platform.log.info(`${this.accessory.context.device.displayName}: `+
-            'Connection with Miele event server succesfully recovered after error.');
+            'Connection with Miele event server succesfully recovered from error.');
           break;
         
         case ReconnectReason.SelfInitiated:
