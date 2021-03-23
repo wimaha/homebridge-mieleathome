@@ -1,7 +1,8 @@
 [![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
 ![Build and Lint](https://github.com/QuickSander/homebridge-mieleathome/workflows/Build%20and%20Lint/badge.svg)
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
-[![npm version](https://badge.fury.io/js/homebridge-mieleathome.svg)](https://badge.fury.io/js/homebridge-mieleathome)
+[![npm (beta))](https://img.shields.io/npm/v/homebridge-mieleathome/beta.svg)](https://www.npmjs.com/package/homebridge-mieleathome)
+[![npm (latest)](https://img.shields.io/npm/v/homebridge-mieleathome/latest)](https://www.npmjs.com/package/homebridge-mieleathome)
 
 ![Miele + Homebridge](./homebridge-ui/public/miele-homebridge.png "Miele + Homebridge")
 
@@ -19,7 +20,7 @@ It (currently) requires a
 - Miele Washing machine (e.g. WCG370, WMV960).
 - Miele Dryer (e.g. TMV840WP)
 - Miele Dishwasher.
-- Experimental Miele Fridge and Fridge Freezer combination support.
+- Miele Fridge and Fridge Freezer combination.
 
 ## Features
 - Easy setup: guided process to retrieve token via OAuth2 from Miele.
@@ -28,7 +29,10 @@ It (currently) requires a
 - Start / stop (dish) washing machine program (with an option to disable to prevent unintentional program stop requests).
 - Remaining run time.
 - Washing machine / dish washer program target temperature.
+- Fridge / Freezer target and current temperature
+- Set Fridge / Freezer target temperature.
 - HomeKit identify support via Homebridge log.
+
 
 ## Breaking changes
 ### Versions > 2.8.0
