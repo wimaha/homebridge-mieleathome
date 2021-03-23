@@ -6,7 +6,6 @@
 
 ![Miele + Homebridge](./homebridge-ui/public/miele-homebridge.png "Miele + Homebridge")
 
-
 # Miele@home Homebridge plugin
 
 This [Homebridge](https://homebridge.io) plugin strives to integrate Miele@home enabled devices with HomeKit.
