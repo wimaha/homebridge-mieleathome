@@ -36,11 +36,19 @@ export interface MieleStatusResponse {
 //-------------------------------------------------------------------------------------------------
 // Class Base Miele Accessory
 //-------------------------------------------------------------------------------------------------
+enum ReconnectReason {
+  Initial,
+  Error,
+  SelfInitiated,
+  ServerConnectionLost
+}
+
 export abstract class MieleBasePlatformAccessory {
   private eventUrl = DEVICES_INFO_URL + '/' + this.accessory.context.device.uniqueId + '/events';
   protected mainService!: Service;
   protected characteristics: IMieleCharacteristic[] = [];
   private eventSource: EventSource | null = null;
+  private reconnectReason = ReconnectReason.Initial;
 
   //-------------------------------------------------------------------------------------------------
   constructor(
@@ -84,21 +92,46 @@ export abstract class MieleBasePlatformAccessory {
 
     this.eventSource = new EventSource(this.eventUrl, config);
 
+    // Data update.
     this.eventSource.addEventListener('device', (event) => {
       this.platform.log.debug(`${this.accessory.context.device.displayName}: Event '${event.type}' received.`);
       const data = JSON.parse(event['data']);
       this.update(data.state);
     });
 
+    // Open success.
     this.eventSource.onopen = (_message) => {
-      this.platform.log.info(`${this.accessory.context.device.displayName}: `+
-        'Connection with Miele event server succesfully (re-)established.');
+      switch(this.reconnectReason) {
+        case ReconnectReason.Initial:
+          this.platform.log.info(`${this.accessory.context.device.displayName}: `+
+            'Initial connection with Miele event server successfully established.');
+          break;
+
+        case ReconnectReason.Error:
+          this.platform.log.info(`${this.accessory.context.device.displayName}: `+
+            'Connection with Miele event server succesfully recovered after error.');
+          break;
+        
+        case ReconnectReason.SelfInitiated:
+          this.platform.log.info(`${this.accessory.context.device.displayName}: `+
+            'Self initiated reconnect with Miele event server successful.');
+          break;
+
+        default:
+        case ReconnectReason.ServerConnectionLost:
+          this.platform.log.debug(`${this.accessory.context.device.displayName}: `+
+            'Connection with Miele event server successfully recovered from stale server connection.');
+          break;
+      }
+      
     };
 
+    // Ping
     this.eventSource.addEventListener('ping', (_event) => {
       //this.platform.log.debug(`${this.accessory.context.device.displayName}: Event '${event.type}' received.`);
     });
 
+    // Error handling.
     this.eventSource.onerror = (error) => {
       this.eventSource?.close();
 
@@ -114,6 +147,8 @@ export abstract class MieleBasePlatformAccessory {
       if(!errorObj.status) {
         this.platform.log.debug(`${this.accessory.context.device.displayName}: Miele event server `+
           `connection lost. Auto-reconnect after ${EVENT_SERVER_RECONNECT_DELAY_S}[s]`);
+        this.reconnectReason = ReconnectReason.ServerConnectionLost;
+
       } else {
         this.platform.log.error(`${this.accessory.context.device.displayName}: Error received from Miele event server. `+
            `Status: ${errorObj.status}. Message: '${errorObj.message}'`);
@@ -122,9 +157,12 @@ export abstract class MieleBasePlatformAccessory {
 
         this.platform.log.info(`${this.accessory.context.device.displayName}: Will attempt to reconnect to the Miele event server after`+
           ` ${EVENT_SERVER_RECONNECT_DELAY_S}[s].`);
+        
+        this.reconnectReason = ReconnectReason.Error;
       }
       
       setTimeout(()=> {
+        this.reconnectReason = ReconnectReason.SelfInitiated;
         this.connectToEventServer();
       }, EVENT_SERVER_RECONNECT_DELAY_S*1000);
     };
@@ -146,7 +184,6 @@ export abstract class MieleBasePlatformAccessory {
     }
 
     this.mainService.setCharacteristic(this.platform.Characteristic.StatusFault, this.platform.Characteristic.StatusFault.NO_FAULT);
-    
   }
 
 }
