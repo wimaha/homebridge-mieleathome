@@ -63,7 +63,11 @@ export class MieleFridgePlatformAccessory extends MieleBasePlatformAccessory {
         ]});
 
     this.mainService.getCharacteristic(this.platform.Characteristic.CurrentTemperature)
-      .on('get', currentTemperatureCharacteristic.get.bind(currentTemperatureCharacteristic));
+      .on('get', currentTemperatureCharacteristic.get.bind(currentTemperatureCharacteristic))
+      .setProps({
+        minValue: -50,
+        maxValue: 100,
+      });
     this.mainService.getCharacteristic(this.platform.Characteristic.TargetTemperature)
       .setProps({
         minValue: 1,    
