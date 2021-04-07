@@ -112,6 +112,8 @@ abstract class MieleBinaryStateCharacteristic extends MieleBaseCharacteristic {
 
   //-------------------------------------------------------------------------------------------------
   update(response: MieleStatusResponse): void {
+    this.platform.log.debug(`${this.deviceName}: Update received for ${this.characteristic.name} raw value: ${response.status.value_raw}.`);
+
     let value = this.offState;
 
     if (this.inactiveStates) {
