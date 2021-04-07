@@ -19,7 +19,9 @@ It (currently) requires a
 - Miele Washing machine (e.g. WCG370, WMV960).
 - Miele Dryer (e.g. TMV840WP)
 - Miele Dishwasher.
-- Miele Fridge and Fridge Freezer combination.
+- Miele Fridge.
+- Miele Freezer (e.g. FN28263).
+- MieleFridge Freezer combination.
 
 ## Features
 - Easy setup: guided process to retrieve token via OAuth2 from Miele.

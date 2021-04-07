@@ -55,6 +55,7 @@
             "WasherDryer",
             "Dishwasher",
             "Fridge",
+            "Freezer",
             "FridgeFreezer"
           ]
         }
@@ -80,6 +81,7 @@
           "type": "string",
           "enum": [
             "Fridge",
+            "Freezer",
             "FridgeFreezer"
           ]
         }

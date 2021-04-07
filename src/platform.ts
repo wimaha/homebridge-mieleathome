@@ -34,6 +34,7 @@ enum MieleDeviceIds {
   Dishwasher = 7,
   Hood = 18,
   Fridge = 19,
+  Freezer = 20,
   FridgeFreezer = 21,
   WasherDryer = 24,
 }
@@ -203,6 +204,7 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
           true); // Dryer is estimated to not have a target temp attribute.
       
       case MieleDeviceIds.Fridge:
+      case MieleDeviceIds.Freezer:
       case MieleDeviceIds.FridgeFreezer:
         return new MieleFridgePlatformAccessory(this, accessory,
           this.disableStopActionFor.includes(MieleDeviceIds[raw_id]),
