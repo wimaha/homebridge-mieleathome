@@ -53,7 +53,9 @@
             "Washer",
             "Dryer",
             "WasherDryer",
-            "Dishwasher"
+            "Dishwasher",
+            "Fridge",
+            "FridgeFreezer"
           ]
         }
       },

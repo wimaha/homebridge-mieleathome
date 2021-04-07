@@ -75,7 +75,10 @@ export abstract class MieleBasePlatformAccessory {
     }
 
     const reconnectTimeoutMs= (reconnectTimeout*60*1000);
-    setInterval(this.connectToEventServer.bind(this), reconnectTimeoutMs);
+    setInterval(()=> {
+      this.reconnectReason = ReconnectReason.SelfInitiated;
+      this.connectToEventServer();
+    }, reconnectTimeoutMs);
   }
 
   //-----------------------------------------------------------------------------------------------
@@ -162,7 +165,6 @@ export abstract class MieleBasePlatformAccessory {
       }
       
       setTimeout(()=> {
-        this.reconnectReason = ReconnectReason.SelfInitiated;
         this.connectToEventServer();
       }, EVENT_SERVER_RECONNECT_DELAY_S*1000);
     };
