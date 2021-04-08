@@ -2,6 +2,7 @@
 // Copyright (c) 2021, Sander van Woensel
 
 import { PlatformAccessory } from 'homebridge';
+import axios from 'axios';
 
 import { MieleAtHomePlatform } from './platform';
 import { MieleBasePlatformAccessory, MieleState } from './mieleBasePlatformAccessory';
@@ -68,12 +69,30 @@ export class MieleFridgePlatformAccessory extends MieleBasePlatformAccessory {
         minValue: -50,
         maxValue: 100,
       });
+
+    // Retrieve allowed temperature range.
+    axios.get(this.platform.getActionsUrl(accessory.context.device.uniqueId),
+      this.platform.getHttpRequestConfig())
+      .then((response) => {
+        const targetTemperature = response.data.targetTemperature[0];
+
+        this.platform.log.info(`${accessory.context.device.displayName} (${accessory.context.device.uniqueId}): `+
+          `Setting target temperature range for zone 1 to: ${JSON.stringify(targetTemperature)}.`);
+        
+        this.mainService.getCharacteristic(this.platform.Characteristic.TargetTemperature)
+          .setProps({
+            minValue: targetTemperature?.min,    
+            maxValue: targetTemperature?.max,
+            minStep: 1, // Hardcoded to 1 no info about possible steps available.
+          });
+
+      })
+      .catch((reason) => {
+        this.platform.log.error(`${accessory.context.device.displayName} (${accessory.context.device.uniqueId}): `+
+          'Failed to retrieve target temperature range. Error: '+reason);
+      });
+
     this.mainService.getCharacteristic(this.platform.Characteristic.TargetTemperature)
-      .setProps({
-        minValue: 1,    
-        maxValue: 9,       // TODO: set min/max based on API reply, hard coded for now.
-        minStep: 1,
-      })  
       .on('get', targetTemperatureCharacteristic.get.bind(targetTemperatureCharacteristic))
       .on('set', targetTemperatureCharacteristic.set.bind(targetTemperatureCharacteristic));
 

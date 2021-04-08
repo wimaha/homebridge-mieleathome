@@ -183,6 +183,7 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
     // Receive initialState.
 
 
+
     switch (raw_id) {
       case MieleDeviceIds.Hood:
         // TODO: Change to class deriving from BasePlatformAccessory.
@@ -191,9 +192,9 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
       case MieleDeviceIds.WasherDryer:
       case MieleDeviceIds.Washer:
       case MieleDeviceIds.Dishwasher: 
-        // return new MieleFridgePlatformAccessory(this, accessory,
-        //   this.disableStopActionFor.includes(MieleDeviceIds[raw_id]),
-        //   this.disableSetTargetTempFor.includes(MieleDeviceIds[raw_id]));
+        //  return new MieleFridgePlatformAccessory(this, accessory,
+        //    this.disableStopActionFor.includes(MieleDeviceIds[raw_id]),
+        //    this.disableSetTargetTempFor.includes(MieleDeviceIds[raw_id]));
         return new MieleWasherDryerPlatformAccessory(this, accessory, 
           this.disableStopActionFor.includes(MieleDeviceIds[raw_id]),
           this.disableTempSensorFor.includes(MieleDeviceIds[raw_id]));
