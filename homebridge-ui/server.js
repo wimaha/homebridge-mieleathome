@@ -117,6 +117,15 @@ class PluginUiServer extends HomebridgePluginUiServer {
         break;
       }
 
+      case '/test': {
+        // Since the host running the plugin setup page is different from the auth grant server
+        // and still we want to test from the setup page, allow the homebridge host.
+        // TODO: somehow retrieve the homebridge host and port instead of '*'.
+        res.writeHead(200, {'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*'});
+        res.end('ok');
+        break;
+      }
+
       default:
         this.writeHtmlMessage(res, 404, 'Invalid request', `Resource "${reqUrl.pathname}" not found.`);
         break;
@@ -141,17 +150,28 @@ class PluginUiServer extends HomebridgePluginUiServer {
 
     // If server is already running, do not restart it.
     if(!this.server || this.port !== options.port) {
-      if(this.server) {
-        console.log('Closing previous authorization receiver server.');
-        this.server.close();
-      }
-      this.server = http.createServer(this.authorizationGrantListener.bind(this));
-      this.server.listen(options.port, HOST, () => {
-        console.log(`Temporary authorization grant receiver server running on http://${HOST}:${options.port}`);
-      });
-      this.port = options.port;
+      try {
+        if(this.server) {
+          console.log('Closing previous authorization receiver server.');
+          this.server.close();
+        }
+        this.server = http.createServer(this.authorizationGrantListener.bind(this));
+        this.server.listen(options.port, HOST, () => {
+          console.log(`Temporary authorization grant receiver server running on http://${HOST}:${options.port}`);
+        });
 
-      this.generateState();
+        this.port = options.port;
+
+        this.server.on('error', (err) => {
+          this.pushEvent('server-error', {message: err.message, title: 'Authorization grant server: '+err.code});
+          console.error('Authoriation grant server error: '+err.code+' Error: '+err.message);
+        });
+
+        this.generateState();
+      } catch (err) {
+        console.error('Authorization grant server failed to start.');
+        this.pushEvent('server-error', {message: err.message, title: 'Failed to initialize authorization grant server.'});
+      }
     }
 
     return this.expectedState;
@@ -212,7 +232,7 @@ class PluginUiServer extends HomebridgePluginUiServer {
       this.pushEvent('token-status-changed', 'token_stored');
 
     } catch(err) {
-      console.log('Request token error: '+err.message);
+      console.error('Request token error: '+err.message);
       this.pushEvent('error', {message: err.message, title: 'Failed to request token'});
     } finally {
       if(this.mieleResponseTimeout) {

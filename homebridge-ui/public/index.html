@@ -24,7 +24,7 @@ Copyright (c) 2021, Sander van Woensel
       <input type="text" class="form-control" id="clientSecretInput" required>
     </div>
     <div class="form-group">
-      <label for="serverPortInput">Authorization grant server port (only change in case of conflicts)</label>
+      <label for="serverPortInput">Authorization grant server port.<br/><span id="portInfo"></span></label>
       <input type="text" class="form-control" id="serverPortInput" required value="8582">
     </div>
     <div class="text-center">
@@ -35,6 +35,8 @@ Copyright (c) 2021, Sander van Woensel
 
   
   <script>
+
+    // ----------------------------------------------------------------------------    
     // Server raised a state change during the token retrieval process.
     async function tokenStatusChanged(event) {
       console.log('New token status received: '+JSON.stringify(event.data)); 
@@ -60,16 +62,34 @@ Copyright (c) 2021, Sander van Woensel
       }
     }
 
+    // ----------------------------------------------------------------------------
     // Server raised an error during the token retrieval process.
     async function tokenRetrievalError(event) {
       console.log('Token retrieval error: '+JSON.stringify(event.data)); 
       homebridge.toast.error(event.data.message, event.data.title);
-      inputChanged();
+      validateSettings();
       homebridge.hideSpinner();
     }
 
-    // Update acnchor link to reflect the now known link.
+    // ----------------------------------------------------------------------------
+    // Server raised an error during the token retrieval process.
+    async function serverInitError(event) {
+      console.log('Server initialize error: '+JSON.stringify(event.data)); 
+      homebridge.toast.error(event.data.message, event.data.title);
+      
+      // Server error always yields disabled login buton
+      const portInfoElem = document.getElementById('portInfo');
+      portInfoElem.innerHTML = 'Authorization grant server error.';
+      portInfoElem.style = 'color: red;';
+      document.getElementById('loginButton').setAttribute('disabled', 'disabled');
+
+      homebridge.hideSpinner();
+    }
+    
+    // ----------------------------------------------------------------------------
+    // Update anchor link to reflect the now known link.
     async function constructAuthorizationRequestLink(clientId, clientSecret, serverPort) {
+      
       // Start server to receive authorization grant from Miele.
       const state = await homebridge.request('/initialize_server',
         {port: serverPort,
@@ -78,31 +98,74 @@ Copyright (c) 2021, Sander van Woensel
         });
       
       const host = window.location.host.replace(/:[0-9]+/, '');
-      const redirectUrl = `${window.location.protocol}//${host}:${serverPort}/auth_grant`;
+      const redirectBaseUrl = `${window.location.protocol}//${host}:${serverPort}/`;
+      const redirectUrl = redirectBaseUrl+'auth_grant'
       console.log('Redirect URL set to: '+redirectUrl);
 
       const requestUrl = `https://api.mcs3.miele.com/thirdparty/login?client_id=${clientId}&response_type=code&redirect_uri=${redirectUrl}&state=${state}`;
 
-      // Set URL for login button.
-      document.getElementById('loginAnchor').href = requestUrl;
+      // Test connection to server.
+      const portInfoElem = document.getElementById('portInfo');
+      try {
+        const testResponse = await fetch(redirectBaseUrl+'test');
+        const testResponseText = await testResponse.text();
+        console.log('Authorization grant server test response: '+JSON.stringify(testResponseText));
+        if(testResponseText !== 'ok') {
+          throw new Error('Invalid response from test request.');
+        }
+        
+        portInfoElem.innerHTML = 'Authorization grant server online and reachable at &quot;'+redirectBaseUrl+'&quot;.';
+        portInfoElem.style = 'color: green;';
+
+        // Set URL for login button.
+        document.getElementById('loginAnchor').href = requestUrl;
+      
+      } catch(error) {
+        console.log('Authorization grant server test failed.');
+        portInfoElem.innerHTML = 'Authorization grant server not reachable at &quot;'+redirectBaseUrl+'&quot;! Choose a port which is reachable from within this network.';
+        portInfoElem.style = 'color: red;';
+        throw error;
+      }
     }
 
+    // ----------------------------------------------------------------------------
     // Validate form input to enable "Next" button.
-    async function inputChanged() {
+    async function validateSettings(testServer=false) {
+      let serverReachable = false;
       const clientId = document.getElementById('clientIdInput').value;
       const clientSecret = document.getElementById('clientSecretInput').value;
       const serverPort = document.getElementById('serverPortInput').value;
       const loginButton = document.getElementById('loginButton');
 
-      if(clientId && clientSecret && serverPort) {
+      try {
+        homebridge.showSpinner();
+      
+        // Validate preconditions.
+        if (!clientId) {
+            throw new Error('Please enter a valid Client ID as obtained from Miele.');
+        }
+
+        if (!clientSecret) {
+            throw new Error('Please enter a valid Client Secret as obtained from Miele.');
+        }
+
+        if(testServer)
+        {
+          await this.constructAuthorizationRequestLink(clientId, clientSecret, serverPort);
+        }
+
         loginButton.removeAttribute('disabled');
-      }
-      else {
-        loginButton.setAttribute('disabled', 'disabled')
+
+      } catch(err) {
+         homebridge.toast.error(err.message, 'Error');
+         loginButton.setAttribute('disabled', 'disabled')
+      } finally {
+        homebridge.hideSpinner();
       }
 
     }
 
+    // ----------------------------------------------------------------------------
     // Show setup
     async function showSetup(pluginConfig) {
       document.getElementById('setupRequired').style.display = 'block';
@@ -111,15 +174,17 @@ Copyright (c) 2021, Sander van Woensel
       // Subscribe to token status changes.
       homebridge.addEventListener('token-status-changed', this.tokenStatusChanged);
       homebridge.addEventListener('error', this.tokenRetrievalError);
+      homebridge.addEventListener('server-error', this.serverInitError);
 
       // Update any possibly existing clientId / Secret:
       document.getElementById('clientIdInput').value = pluginConfig[0].clientID || '';
       document.getElementById('clientSecretInput').value = pluginConfig[0].clientSecret || '';
 
       // Always fire input changed to disable/enable button.
-      inputChanged();
+      validateSettings(true);
     }
 
+    // ----------------------------------------------------------------------------
     (async () => {
       homebridge.hideSpinner(); // When page gets auto reloaded due to long inactivity start with a hidden spinner.
 
@@ -141,51 +206,27 @@ Copyright (c) 2021, Sander van Woensel
       }
   
       document.getElementById('clientIdInput').addEventListener('input', async (event) => {
-        inputChanged();
+        validateSettings();
       });
 
       document.getElementById('clientSecretInput').addEventListener('input', async (event) => {
-        inputChanged();
+        validateSettings();
       });
 
       document.getElementById('serverPortInput').addEventListener('input', async (event) => {
-        inputChanged();
+        validateSettings(true);
       });
 
-      // About to login, prepare anchor link
+      // About to login, update config.
       document.getElementById('loginAnchor').addEventListener('mouseenter', async () => {
-        homebridge.showSpinner();
-
         const clientId = document.getElementById('clientIdInput').value;
         const clientSecret = document.getElementById('clientSecretInput').value;
         const serverPort = document.getElementById('serverPortInput').value;
 
-        try {
-          // Validate preconditions.
-          if (!clientId) {
-              throw new Error('Please enter a valid Client ID as obtained from Miele.');
-          }
-
-          if (!clientSecret) {
-              throw new Error('Please enter a valid Client Secret as obtained from Miele.');
-          }
-
-          // Update configuration with client ID and client secret.
-          pluginConfig[0].clientID = clientId;
-          pluginConfig[0].clientSecret = clientSecret;
-          await homebridge.updatePluginConfig(pluginConfig);
-
-          await this.constructAuthorizationRequestLink(clientId, clientSecret, serverPort);
-
-        } catch(err) {
-          homebridge.toast.error(err.message, 'Error');
-          inputChanged();
-        }
-        finally {
-          homebridge.hideSpinner(); 
-        }
-
-
+        // Update configuration with client ID and client secret.
+        pluginConfig[0].clientID = clientId;
+        pluginConfig[0].clientSecret = clientSecret;
+        await homebridge.updatePluginConfig(pluginConfig);
       });
 
       // Logging in, show spinner.
@@ -193,12 +234,11 @@ Copyright (c) 2021, Sander van Woensel
         homebridge.showSpinner();
       });
 
-      // Logging in, show spinner.
+      // Show setup.
       document.getElementById('setupButton').addEventListener('click', async () => {
         homebridge.hideSchemaForm();
         showSetup(pluginConfig);
       });
-
   
     })();
 

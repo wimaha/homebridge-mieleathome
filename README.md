@@ -60,7 +60,7 @@ Washer Dryer / Washer / Dishwasher:
 - A HomeKit valve can be turned on and off, however Miele's 3rd party Web API does not always allow you to turn on or off the washing 
   machine. Flipping the switch when not allowed will revert the switch state when it is not allowed.
 
-Fridge / Fridge Freezer combination:
+Fridge / Freezer / Fridge Freezer combination:
 - No multi-zone support (only the first zone controllable).
 
 ## Further reading
