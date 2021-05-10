@@ -21,7 +21,7 @@ It (currently) requires a
 - Miele Dishwasher.
 - Miele Fridge.
 - Miele Freezer (e.g. FN28263).
-- MieleFridge Freezer combination.
+- Miele Fridge Freezer combination.
 
 ## Features
 - Easy setup: guided process to retrieve token via OAuth2 from Miele.
