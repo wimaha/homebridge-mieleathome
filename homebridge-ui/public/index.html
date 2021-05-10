@@ -24,7 +24,7 @@ Copyright (c) 2021, Sander van Woensel
       <input type="text" class="form-control" id="clientSecretInput" required>
     </div>
     <div class="form-group">
-      <label for="serverPortInput">Authorization grant server port.<br/><span id="portInfo"></span></label>
+      <label for="serverPortInput">Authorization grant server port.<br/><span id="portInfo">Not validated yet!</span></label>
       <input type="text" class="form-control" id="serverPortInput" required value="8582">
     </div>
     <div class="text-center">
@@ -35,6 +35,8 @@ Copyright (c) 2021, Sander van Woensel
 
   
   <script>
+
+    let serverReachable = false;
 
     // ----------------------------------------------------------------------------    
     // Server raised a state change during the token retrieval process.
@@ -116,14 +118,16 @@ Copyright (c) 2021, Sander van Woensel
         
         portInfoElem.innerHTML = 'Authorization grant server online and reachable at &quot;'+redirectBaseUrl+'&quot;.';
         portInfoElem.style = 'color: green;';
+        serverReachable = true;
 
         // Set URL for login button.
         document.getElementById('loginAnchor').href = requestUrl;
       
       } catch(error) {
         console.log('Authorization grant server test failed.');
-        portInfoElem.innerHTML = 'Authorization grant server not reachable at &quot;'+redirectBaseUrl+'&quot;! Choose a port which is reachable from within this network.';
+        portInfoElem.innerHTML = 'Authorization grant server not reachable at &quot;'+redirectBaseUrl+'&quot;! Choose a port which is reachable and available from within this network.';
         portInfoElem.style = 'color: red;';
+        serverReachable = false;
         throw error;
       }
     }
@@ -131,7 +135,6 @@ Copyright (c) 2021, Sander van Woensel
     // ----------------------------------------------------------------------------
     // Validate form input to enable "Next" button.
     async function validateSettings(testServer=false) {
-      let serverReachable = false;
       const clientId = document.getElementById('clientIdInput').value;
       const clientSecret = document.getElementById('clientSecretInput').value;
       const serverPort = document.getElementById('serverPortInput').value;
@@ -154,7 +157,9 @@ Copyright (c) 2021, Sander van Woensel
           await this.constructAuthorizationRequestLink(clientId, clientSecret, serverPort);
         }
 
-        loginButton.removeAttribute('disabled');
+        if(serverReachable) {
+          loginButton.removeAttribute('disabled');
+        }
 
       } catch(err) {
          homebridge.toast.error(err.message, 'Error');
