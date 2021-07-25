@@ -100,7 +100,7 @@ Copyright (c) 2021, Sander van Woensel
         });
       
       const host = window.location.host.replace(/:[0-9]+/, '');
-      const redirectBaseUrl = `${window.location.protocol}//${host}:${serverPort}/`;
+      const redirectBaseUrl = `http://${host}:${serverPort}/`; //`${window.location.protocol}//${host}:${serverPort}/`;
       const redirectUrl = redirectBaseUrl+'auth_grant'
       console.log('Redirect URL set to: '+redirectUrl);
 
