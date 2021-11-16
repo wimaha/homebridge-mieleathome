@@ -151,6 +151,23 @@ export class MieleInUseCharacteristic extends MieleBinaryStateCharacteristic {
   }
 }
 
+
+//-------------------------------------------------------------------------------------------------
+// Miele OutletInUse Characteristic. 
+//-------------------------------------------------------------------------------------------------
+export class MieleOutletInUseCharacteristic extends MieleBinaryStateCharacteristic {
+      
+  constructor(
+    platform: MieleAtHomePlatform,
+    service: Service,
+    inactiveStates: MieleState[] | null,
+    activeStates: MieleState[] | null,
+  ) {
+    super(platform, service, inactiveStates, activeStates, platform.Characteristic.OutletInUse, 0, 1);
+  }
+}
+
+
 //-------------------------------------------------------------------------------------------------
 // Miele Current Cooling Characteristic. 
 //-------------------------------------------------------------------------------------------------
@@ -464,9 +481,9 @@ export class MieleTemperatureUnitCharacteristic extends MieleBaseCharacteristic 
 
 
 //-------------------------------------------------------------------------------------------------
-// Base class: Miele Power Characteristic
+// Base class: Miele On Characteristic
 //-------------------------------------------------------------------------------------------------
-export class MielePowerCharacteristic extends MieleBaseCharacteristic {      
+export class MieleOnCharacteristic extends MieleBaseCharacteristic {      
   
   constructor(
     platform: MieleAtHomePlatform,
@@ -492,6 +509,7 @@ export class MielePowerCharacteristic extends MieleBaseCharacteristic {
         const response = await axios.put(this.platform.getActionsUrl(this.serialNumber), data,
           this.platform.getHttpRequestConfig());
         this.platform.log.debug(`${this.deviceName}: Process action response code: ${response.status}: "${response.statusText}"`);
+        this.value = value;
 
       } else {
         this.platform.log.info(`${this.deviceName} (${this.serialNumber}): ` +
