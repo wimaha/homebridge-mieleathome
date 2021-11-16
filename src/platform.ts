@@ -7,6 +7,7 @@ import { PLATFORM_NAME, PLUGIN_NAME, DEVICES_INFO_URL, DEFAULT_RECONNECT_EVENT_S
 import { MieleHoodPlatformAccessory } from './mieleHoodPlatformAccessory';
 import { MieleWasherDryerPlatformAccessory } from './mieleWasherDryerPlatformAccessory';
 import { MieleFridgePlatformAccessory } from './mieleFridgePlatformAccessory';
+import { MieleCoffeeSystemPlatformAccessory } from './mieleCoffeeSystemPlatformAccessory';
 import { Token } from './token';
 
 import axios from 'axios';
@@ -32,6 +33,7 @@ enum MieleDeviceIds {
   Washer = 1,
   Dryer = 2,
   Dishwasher = 7,
+  CoffeeSystem = 17,
   Hood = 18,
   Fridge = 19,
   Freezer = 20,
@@ -211,6 +213,9 @@ export class MieleAtHomePlatform implements DynamicPlatformPlugin {
           this.disableStopActionFor.includes(MieleDeviceIds[raw_id]),
           this.disableSetTargetTempFor.includes(MieleDeviceIds[raw_id]));
 
+      case MieleDeviceIds.CoffeeSystem:
+        return new MieleCoffeeSystemPlatformAccessory(this, accessory);
+    
       default:
         return null;
       

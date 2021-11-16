@@ -62,7 +62,7 @@ abstract class MieleBaseCharacteristic implements IMieleCharacteristic {
 
   //-------------------------------------------------------------------------------------------------
   // Update value only when not equal to cached value.
-  protected updateCharacteristic(value: string | number, logInfo = true) {
+  protected updateCharacteristic(value: CharacteristicValue, logInfo = true) {
     if(value!==this.value) {
       const logStr = `${this.deviceName}: Updating characteristic ${this.characteristic.name} to ${value}.`;
       if(logInfo) {
@@ -460,4 +460,56 @@ export class MieleTemperatureUnitCharacteristic extends MieleBaseCharacteristic 
     this.updateCharacteristic(value);
   }
 
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// Base class: Miele Power Characteristic
+//-------------------------------------------------------------------------------------------------
+export class MielePowerCharacteristic extends MieleBaseCharacteristic {      
+  
+  constructor(
+    platform: MieleAtHomePlatform,
+    service: Service,
+    private serialNumber: string,
+  ) {
+    super(platform, service, platform.Characteristic.On, false);
+  }
+
+  async set(value: CharacteristicValue, callback: CharacteristicSetCallback) {
+    this.platform.log.debug(`${this.deviceName}: Set characteristic ${this.characteristic.name} to: ${value}`);
+
+    callback(null);
+
+    try {
+      const response = await axios.get(this.platform.getActionsUrl(this.serialNumber),
+        this.platform.getHttpRequestConfig());
+
+      const action = value ? "powerOn" : "powerOff";
+      if (response.data[action]) {
+        const data = {};
+        data[action] = true;
+        const response = await axios.put(this.platform.getActionsUrl(this.serialNumber), data,
+          this.platform.getHttpRequestConfig());
+        this.platform.log.debug(`${this.deviceName}: Process action response code: ${response.status}: "${response.statusText}"`);
+
+      } else {
+        this.platform.log.info(`${this.deviceName} (${this.serialNumber}): ` +
+          `Ignoring request to power ${value ? 'on' : 'off'} the device: not allowed in current device state. ` +
+          `Allowed power actions: on=${response.data.powerOn}, off=${response.data.powerOff}`);
+        this.undoSetState(value);
+      }
+
+    } catch (error) {
+      this.platform.log.error(createErrorString(error));
+      this.undoSetState(value);
+    }
+  }
+
+  update(response: MieleStatusResponse): void {
+    this.platform.log.debug(`${this.deviceName}: Update received for ${this.characteristic.name} raw value: ${response.status.value_raw}.`);
+
+    const value = response.status.value_raw !== MieleState.Off;
+    this.updateCharacteristic(value);
+  }
 }
