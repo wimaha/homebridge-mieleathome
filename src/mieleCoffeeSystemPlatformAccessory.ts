@@ -7,7 +7,6 @@ import { MieleAtHomePlatform } from './platform';
 import { MieleBasePlatformAccessory, MieleState } from './mieleBasePlatformAccessory';
 
 import { MieleOnCharacteristic, MieleOutletInUseCharacteristic } from './mieleCharacteristics';
-import { timeStamp } from 'console';
 
 //-------------------------------------------------------------------------------------------------
 // Class Coffee System

@@ -508,7 +508,7 @@ export class MieleOnCharacteristic extends MieleBaseCharacteristic {
       const response = await axios.get(this.platform.getActionsUrl(this.serialNumber),
         this.platform.getHttpRequestConfig());
 
-      const action = value ? "powerOn" : "powerOff";
+      const action = value ? 'powerOn' : 'powerOff';
       if (response.data[action]) {
         const data = {};
         data[action] = true;
