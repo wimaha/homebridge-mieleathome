@@ -301,7 +301,7 @@ export class MieleRemainingDurationCharacteristic extends MieleBaseCharacteristi
   //-------------------------------------------------------------------------------------------------
   update(response: MieleStatusResponse): void {
     let value = response.remainingTime[0]*3600 + response.remainingTime[1]*60;
-    this.platform.log.debug(`${this.deviceName}: Remaing Duration update received: ${value}[s]`);
+    this.platform.log.debug(`${this.deviceName}: Remaining Duration update received: ${value}[s]`);
 
     // Clip to min and max value.
     const characteristic = this.service.getCharacteristic(this.platform.Characteristic.RemainingDuration);
@@ -311,6 +311,12 @@ export class MieleRemainingDurationCharacteristic extends MieleBaseCharacteristi
     if(maxValue && minValue) {
       value = value > maxValue ? maxValue : value;
       value = value < minValue ? minValue : value;
+    }
+
+    // DO not allow any invalid value to pass through.
+    if(typeof(value)!=='number' || Number.isNaN(value)) {
+      this.platform.log.debug(`${this.deviceName}: Prevented setting NaN or another non-number type for Remaining Duration.`);
+      value = 0;
     }
 
     this.updateCharacteristic(value, false);
