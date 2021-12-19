@@ -313,7 +313,7 @@ export class MieleRemainingDurationCharacteristic extends MieleBaseCharacteristi
       value = value < minValue ? minValue : value;
     }
 
-    // DO not allow any invalid value to pass through.
+    // Do not allow any invalid value to pass through.
     if(typeof(value)!=='number' || Number.isNaN(value)) {
       this.platform.log.debug(`${this.deviceName}: Prevented setting NaN or another non-number type for Remaining Duration.`);
       value = 0;
