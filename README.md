@@ -22,6 +22,7 @@ It (currently) requires a
 - Miele Fridge.
 - Miele Freezer (e.g. FN28263).
 - Miele Fridge Freezer combination.
+- Miele Coffee machine (e.g. CVA7845).
 
 ## Features
 - Easy setup: guided process to retrieve token via OAuth2 from Miele.
@@ -67,7 +68,7 @@ Fridge / Freezer / Fridge Freezer combination:
 - [Wiki](../../wiki/)
 
 ## Planned features
-- Add support for oven, hob and coffee machine?
+- Add support for oven and hob.
 - Add Custom characteristic to display current program running.
 
 ## Thanks
