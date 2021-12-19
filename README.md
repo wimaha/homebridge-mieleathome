@@ -73,3 +73,4 @@ Fridge / Freezer / Fridge Freezer combination:
 
 ## Thanks
 - [MichelRabozee](https://github.com/MichelRabozee)
+- [Arkadiusz Wahlig](https://github.com/awahlig): Initial Coffee Machine support.

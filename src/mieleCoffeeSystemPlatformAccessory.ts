@@ -1,4 +1,4 @@
-// Apacche License
+// Apache License
 // Copyright (c) 2021, Arkadiusz Wahlig
 
 import { PlatformAccessory } from 'homebridge';
